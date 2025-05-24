@@ -25,6 +25,7 @@ import com.example.not_today_sun.MainActivity
 import com.example.not_today_sun.R
 import com.example.not_today_sun.databinding.FragmentHomeBinding
 import com.example.not_today_sun.home.HomeViewModel.HomeViewModel
+import com.example.not_today_sun.key._apiKey
 import com.example.not_today_sun.model.remote.CurrentWeatherResponse
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -46,11 +47,11 @@ class HomeFragment : Fragment() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var hasLocationPermission = false
     private val sharedPref by lazy {
-        requireContext().getSharedPreferences("InitialSetupPrefs", Context.MODE_PRIVATE)
+        requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
     }
 
     private val viewModel: HomeViewModel by viewModels {
-        WeatherViewModelFactory((requireActivity() as MainActivity).weatherRepository)
+        HomeViewModelFactory((requireActivity() as MainActivity).weatherRepository)
     }
 
     private val locationPermissionRequest = registerForActivityResult(
@@ -67,7 +68,7 @@ class HomeFragment : Fragment() {
             }
             else -> {
                 Snackbar.make(
-                    binding.root,
+                    binding.weatherContainer,
                     "Location permission denied. Using default location.",
                     Snackbar.LENGTH_LONG
                 ).setAction("Retry") {
@@ -107,9 +108,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun checkAndTriggerLocation() {
-        val gpsEnabled = sharedPref.getBoolean("gps_enabled", false)
-        if (gpsEnabled) {
+        val useGps = sharedPref.getBoolean("use_gps", false)
+        val useMap = sharedPref.getBoolean("use_map", false)
+        if (useGps) {
             checkLocationPermission()
+        } else if (useMap) {
+            fetchWeatherWithMapLocation()
         } else {
             fetchWeatherWithFallback()
         }
@@ -147,7 +151,7 @@ class HomeFragment : Fragment() {
                 fetchWeatherWithFallback()
                 if (!shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     Snackbar.make(
-                        binding.root,
+                        binding.weatherContainer,
                         "Location permission permanently denied. Go to Settings to enable.",
                         Snackbar.LENGTH_LONG
                     ).setAction("Settings") {
@@ -225,32 +229,35 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-    private fun fetchWeatherWithFallback() {
-        val sharedPref = requireActivity().getSharedPreferences("WeatherPrefs", Context.MODE_PRIVATE)
-        val latitude = sharedPref.getFloat("lastLat", 0f).toDouble()
-        val longitude = sharedPref.getFloat("lastLon", 0f).toDouble()
+    private fun fetchWeatherWithMapLocation() {
+        val latitude = sharedPref.getFloat("map_lat", 0f).toDouble()
+        val longitude = sharedPref.getFloat("map_lon", 0f).toDouble()
 
         if (isValidLocation(latitude, longitude)) {
+            Log.d("HomeFragment", "Fetching weather with map location: $latitude, $longitude")
             fetchWeatherData(latitude, longitude)
         } else {
+            Log.e("HomeFragment", "Invalid map location coordinates")
             with(sharedPref.edit()) {
-                remove("lastLat")
-                remove("lastLon")
+                remove("map_lat")
+                remove("map_lon")
+                remove("map_location_name")
                 apply()
             }
-            if (hasLocationPermission) {
-                getCurrentLocation()
-            } else {
-                fetchWeatherData(51.5074, -0.1278) // Default to London
-                Snackbar.make(
-                    binding.root,
-                    "Unable to get current location. Using London as default. Enable location for accurate weather.",
-                    Snackbar.LENGTH_LONG
-                ).setAction("Retry") {
-                    checkLocationPermission()
-                }.show()
-            }
+            fetchWeatherWithFallback()
         }
+    }
+
+    private fun fetchWeatherWithFallback() {
+        // Default to London if no valid location is available
+        fetchWeatherData(51.5074, -0.1278)
+        Snackbar.make(
+            binding.weatherContainer,
+            "Unable to get location. Using London as default.",
+            Snackbar.LENGTH_LONG
+        ).setAction("Retry") {
+            checkAndTriggerLocation()
+        }.show()
     }
 
     private fun isValidLocation(latitude: Double, longitude: Double): Boolean {
@@ -260,10 +267,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun saveLocation(latitude: Double, longitude: Double) {
-        val sharedPref = requireActivity().getSharedPreferences("WeatherPrefs", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
-            putFloat("lastLat", latitude.toFloat())
-            putFloat("lastLon", longitude.toFloat())
+            putFloat("map_lat", latitude.toFloat())
+            putFloat("map_lon", longitude.toFloat())
             apply()
         }
     }
@@ -272,7 +278,7 @@ class HomeFragment : Fragment() {
         viewModel.fetchWeatherData(
             latitude = latitude,
             longitude = longitude,
-            apiKey = "a8e1403c5d6bea0cc878a89714ec75ed"
+            apiKey = _apiKey
         )
         Log.d("HomeFragment", "Fetching weather for: $latitude, $longitude")
     }
@@ -286,19 +292,29 @@ class HomeFragment : Fragment() {
         viewModel.currentWeather.observe(viewLifecycleOwner, Observer { weather ->
             weather?.let {
                 updateWeatherUI(it)
+                // Save the current weather to local storage
+                viewModel.saveCurrentWeatherToLocal(it)
             }
         })
 
         viewModel.hourlyForecast.observe(viewLifecycleOwner, Observer { forecast ->
             forecast?.let {
+                Log.d("HomeFragment", "Raw hourly forecast count: ${forecast.list?.size ?: 0}")
+
                 val calendar = Calendar.getInstance()
                 val today = calendar.get(Calendar.DAY_OF_YEAR)
                 val timezoneOffsetMillis = forecast.city.timezone * 1000L
 
-                val todayForecasts = forecast.list?.filter { weatherData ->
-                    calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
-                    calendar.get(Calendar.DAY_OF_YEAR) == today
-                }?.take(24) ?: emptyList()
+                // Fallback to current day if filtering fails
+                val todayForecasts = forecast.list?.let { list ->
+                    val filtered = list.filter { weatherData ->
+                        calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
+                        calendar.get(Calendar.DAY_OF_YEAR) == today
+                    }
+                    if (filtered.isNotEmpty()) filtered.take(24) else list.take(24)
+                } ?: emptyList()
+
+                Log.d("HomeFragment", "Displaying hourly forecast count: ${todayForecasts.size}")
 
                 hourlyForecastAdapter = HourlyForecastAdapter(
                     todayForecasts,
@@ -306,6 +322,7 @@ class HomeFragment : Fragment() {
                     viewModel::formatHourlyTime
                 )
                 binding.rvHourlyForecast.adapter = hourlyForecastAdapter
+                binding.rvHourlyForecast.visibility = View.VISIBLE
 
                 val dailyForecasts = forecast.list?.groupBy { weatherData ->
                     calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
@@ -324,24 +341,29 @@ class HomeFragment : Fragment() {
                     forecast.city.timezone.toLong()
                 )
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
+
+                // Save the hourly forecast to local storage
+                viewModel.saveHourlyForecastToLocal(forecast)
             }
         })
 
         viewModel.errorMessage.observe(viewLifecycleOwner, Observer { error ->
             error?.let {
-                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
+                Snackbar.make(binding.weatherContainer, it, Snackbar.LENGTH_LONG).show()
             }
         })
     }
-
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
         binding.tvTemperature.text = String.format("%.1f°C", weather.main.temperature)
 
-        val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy 'at' h:mm a", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = weather.dateTime * 1000 + weather.timezone * 1000
-        binding.tvDateTime.text = dateFormat.format(calendar.time)
+        // Format date and time with location's timezone
+        val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT")
+        val adjustedTime = weather.dateTime * 1000 + weather.timezone * 1000
+        val formattedDate = dateFormat.format(Date(adjustedTime))
+        val formattedTime = viewModel.formatHourlyTime(weather.dateTime, weather.timezone.toLong())
+        binding.tvDateTime.text = "$formattedDate at $formattedTime"
 
         binding.tvHumidity.text = "Humidity: ${weather.main.humidity}%"
         binding.tvWind.text = "Wind: ${weather.wind.speed} m/s"

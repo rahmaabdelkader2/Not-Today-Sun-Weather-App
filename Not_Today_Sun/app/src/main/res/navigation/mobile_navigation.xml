@@ -3,23 +3,54 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@id/nav_home">
 
     <fragment
         android:id="@+id/nav_home"
         android:name="com.example.not_today_sun.home.view.HomeFragment"
-        android:label="@string/menu_home"
+        android:label="Home"
         tools:layout="@layout/fragment_home" />
+
 
     <fragment
         android:id="@+id/nav_fav"
-        android:name="com.example.not_today_sun.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        android:name="com.example.not_today_sun.fav.view.FavFragment"
+        android:label="Favorites">
+        <action
+            android:id="@+id/action_nav_fav_to_mapFragment"
+            app:destination="@id/mapFragment"
+            app:popUpTo="@id/nav_fav"
+            app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_nav_fav_to_locationWeatherFragment"
+            app:destination="@id/locationWeatherFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.not_today_sun.OSM.SimpleMapFragment"
+        android:label="Select Location" />
 
     <fragment
-        android:id="@+id/nav_settings"
-        android:name="com.example.not_today_sun.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
+        android:id="@+id/initialSetupFragment"
+        android:name="com.example.not_today_sun.InitialSetup.InitialSetupFragment"
+        android:label="Initial Setup">
+        <action
+            android:id="@+id/action_initialSetupFragment_to_simpleMapFragment"
+            app:destination="@id/mapFragment"
+            app:popUpTo="@id/initialSetupFragment"
+            app:popUpToInclusive="false" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/locationWeatherFragment"
+        android:name="com.example.not_today_sun.fav.view.LocationWeatherFragment"
+        android:label="Location Weather">
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_notification"
+        android:name="com.example.not_today_sun.notification.view.NotificationFragment"
+        android:label="Notification"
+        tools:layout="@layout/fragment_notification" />
+
 </navigation>

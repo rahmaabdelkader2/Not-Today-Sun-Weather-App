@@ -5,12 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.not_today_sun.model.pojo.Alarm
+import com.example.not_today_sun.model.pojo.FavoriteLocation
 import com.example.not_today_sun.model.remote.CurrentWeatherResponse
 import com.example.not_today_sun.model.remote.HourlyForecastResponse
 
 @Database(
-    entities = [HourlyForecastResponse::class, CurrentWeatherResponse::class],
-    version = 1,
+    entities = [HourlyForecastResponse::class, CurrentWeatherResponse::class, FavoriteLocation::class, Alarm::class],
+    version = 3, // Increment version due to schema change
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -28,7 +30,7 @@ abstract class WeatherDatabase : RoomDatabase() {
                     WeatherDatabase::class.java,
                     "weather_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration() // Note: Use proper migration in production
                     .build()
                 INSTANCE = instance
                 instance

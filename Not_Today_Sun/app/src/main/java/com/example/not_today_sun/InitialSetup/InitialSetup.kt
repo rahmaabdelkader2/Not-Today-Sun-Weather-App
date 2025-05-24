@@ -1,43 +1,147 @@
 package com.example.not_today_sun.InitialSetup
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
+import androidx.navigation.fragment.findNavController
 import com.example.not_today_sun.MainActivity
-import com.example.not_today_sun.databinding.ActivityInitialSetupBinding
+import com.example.not_today_sun.R
+import com.example.not_today_sun.databinding.FragmentInitialSetupBinding
 
-class InitialSetup : AppCompatActivity() {
-    private lateinit var binding: ActivityInitialSetupBinding
-    private val sharedPref by lazy {
-        getSharedPreferences("InitialSetupPrefs", MODE_PRIVATE)
+class InitialSetupFragment : Fragment() {
+
+    private var _binding: FragmentInitialSetupBinding? = null
+    private val binding get() = _binding!!
+
+    private val settingsPrefs by lazy {
+        requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        binding = ActivityInitialSetupBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentInitialSetupBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Set up fragment result listener for map location
+        setFragmentResultListener("locationRequestKey") { _, bundle ->
+            try {
+                val latitude = bundle.getDouble("lat")
+                val longitude = bundle.getDouble("lon")
+                with(settingsPrefs.edit()) {
+                    putFloat("map_lat", latitude.toFloat())
+                    putFloat("map_lon", longitude.toFloat())
+                    putString("map_location_name", "Selected Location")
+                    putBoolean("is_first_boot", false)
+                    apply()
+                }
+                // Proceed to MainActivity with HomeFragment
+                startActivity(Intent(requireContext(), MainActivity::class.java).apply {
+                    putExtra("navigate_to_home", true)
+                })
+                requireActivity().finish()
+            } catch (e: Exception) {
+                // Handle error
+                binding.mapCheckBox.isChecked = false
+                binding.gpsCheckBox.isChecked = true
+                with(settingsPrefs.edit()) {
+                    putBoolean("use_gps", true)
+                    putBoolean("use_map", false)
+                    remove("map_lat")
+                    remove("map_lon")
+                    remove("map_location_name")
+                    putBoolean("is_first_boot", false)
+                    apply()
+                }
+                // Proceed to MainActivity with HomeFragment
+                startActivity(Intent(requireContext(), MainActivity::class.java).apply {
+                    putExtra("navigate_to_home", true)
+                })
+                requireActivity().finish()
+            }
         }
 
-        // Handle GPS CheckBox click to save flag
+        // Handle GPS CheckBox
         binding.gpsCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            with(sharedPref.edit()) {
-                putBoolean("gps_enabled", isChecked)
+            if (isChecked) {
+                binding.mapCheckBox.isChecked = false
+                with(settingsPrefs.edit()) {
+                    putBoolean("use_gps", true)
+                    putBoolean("use_map", false)
+                    remove("map_lat")
+                    remove("map_lon")
+                    remove("map_location_name")
+                    apply()
+                }
+            }
+        }
+
+        // Handle Map CheckBox
+        binding.mapCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                binding.gpsCheckBox.isChecked = false
+                with(settingsPrefs.edit()) {
+                    putBoolean("use_gps", false)
+                    putBoolean("use_map", true)
+                    apply()
+                }
+            } else {
+                with(settingsPrefs.edit()) {
+                    putBoolean("use_map", false)
+                    remove("map_lat")
+                    remove("map_lon")
+                    remove("map_location_name")
+                    apply()
+                }
+            }
+        }
+
+        // Handle Notification CheckBox
+        binding.NotificationCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            with(settingsPrefs.edit()) {
+                putBoolean("notifications_enabled", isChecked)
                 apply()
             }
         }
 
-        // Handle OK button click to navigate to MainActivity
+        // Handle OK Button
         binding.okButton.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+            if (binding.mapCheckBox.isChecked) {
+                // Navigate to SimpleMapFragment
+                findNavController().navigate(R.id.action_initialSetupFragment_to_simpleMapFragment)
+            } else {
+                // Mark setup as complete and proceed to MainActivity
+                with(settingsPrefs.edit()) {
+                    putBoolean("is_first_boot", false)
+                    apply()
+                }
+                startActivity(Intent(requireContext(), MainActivity::class.java).apply {
+                    putExtra("navigate_to_home", true)
+                })
+                requireActivity().finish()
+            }
         }
+
+        // Restore saved state
+        val useGps = settingsPrefs.getBoolean("use_gps", true)
+        val useMap = settingsPrefs.getBoolean("use_map", false)
+        binding.gpsCheckBox.isChecked = useGps
+        binding.mapCheckBox.isChecked = useMap
+        binding.NotificationCheckBox.isChecked = settingsPrefs.getBoolean("notifications_enabled", false)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

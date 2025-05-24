@@ -11,6 +11,7 @@ android {
 
     buildFeatures {
         viewBinding=true
+        buildConfig=true
     }
 
     defaultConfig {
@@ -30,7 +31,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+//            buildConfigField("String", "WEATHER_API_KEY", "\"a8e1403c5d6bea0cc878a89714ec75ed\"")
         }
+//        debug {
+//            buildConfigField("String", "WEATHER_API_KEY", "\"a8e1403c5d6bea0cc878a89714ec75ed\"")
+//        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -39,9 +44,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    buildFeatures {
-        viewBinding = true
-    }
+
 }
 
 dependencies {
@@ -73,14 +76,20 @@ dependencies {
     implementation ("androidx.room:room-ktx:2.7.1")
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation ("com.google.android.material:material:1.9.0")
     implementation ("androidx.recyclerview:recyclerview:1.3.0")
     implementation ("com.github.bumptech.glide:glide:4.12.0")
 
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation ("com.airbnb.android:lottie:6.4.1")
+
+
+    implementation ("androidx.activity:activity-ktx:1.9.3")
+    implementation ("androidx.fragment:fragment-ktx:1.8.5")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+    implementation ("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation ("org.osmdroid:osmdroid-android:6.1.18")
 
 
 }

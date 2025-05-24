@@ -32,59 +32,95 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
         units: String = "metric",
         language: String = "en"
     ) {
+        // Validate coordinates first
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            _errorMessage.value = "Invalid location coordinates"
+            _isLoading.value = false
+            return
+        }
+
         _isLoading.value = true
         viewModelScope.launch {
-            // Fetch current weather
-            Log.d("HomeViewModel", "Fetching current weather for lat: $latitude, lon: $longitude")
-            val currentResult = repository.getCurrentWeather(
-                latitude = latitude,
-                longitude = longitude,
-                apiKey = apiKey,
-                units = units,
-                language = language
-            )
+            try {
+                // Fetch current weather
+                val currentResult = repository.getCurrentWeather(
+                    latitude = latitude,
+                    longitude = longitude,
+                    apiKey = apiKey,
+                    units = units,
+                    language = language
+                )
+                if (currentResult.isSuccess) {
+                    val weatherResponse = currentResult.getOrThrow()
+                    _currentWeather.value = weatherResponse
+                    _errorMessage.value = null
+                } else {
+                    val exception = currentResult.exceptionOrNull() ?: Exception("Unknown error")
+                    _errorMessage.value = "Failed to fetch current weather: ${exception.message}"
+                    Log.e("HomeViewModel", "Current weather fetch failed", exception)
+                }
 
-            currentResult.onSuccess { weatherResponse ->
-                Log.d("HomeViewModel", "Current weather fetched: $weatherResponse")
-                _currentWeather.value = weatherResponse
-                _errorMessage.value = null
-            }.onFailure { exception ->
-                Log.e("HomeViewModel", "Error fetching current weather: ${exception.message}", exception)
-                _errorMessage.value = exception.message ?: "Failed to fetch current weather data"
+                // Fetch hourly forecast
+                val forecastResult = repository.getHourlyForecast(
+                    latitude = latitude,
+                    longitude = longitude,
+                    apiKey = apiKey,
+                    units = units,
+                    language = language
+                )
+                if (forecastResult.isSuccess) {
+                    val forecastResponse = forecastResult.getOrThrow()
+                    _hourlyForecast.value = forecastResponse
+                    saveHourlyForecastToLocal(forecastResponse)
+                    _errorMessage.value = null
+                } else {
+                    val exception = forecastResult.exceptionOrNull() ?: Exception("Unknown error")
+                    _errorMessage.value = "Failed to fetch forecast: ${exception.message}"
+                    Log.e("HomeViewModel", "Hourly forecast fetch failed", exception)
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Network error: ${e.message}"
+                Log.e("HomeViewModel", "Network error", e)
+            } finally {
+                _isLoading.value = false
             }
-
-            // Fetch hourly forecast
-            Log.d("HomeViewModel", "Fetching hourly forecast for lat: $latitude, lon: $longitude")
-            val forecastResult = repository.getHourlyForecast(
-                latitude = latitude,
-                longitude = longitude,
-                apiKey = apiKey,
-                units = units,
-                language = language
-            )
-
-            forecastResult.onSuccess { forecastResponse ->
-                Log.d("HomeViewModel", "Hourly forecast fetched: $forecastResponse")
-                _hourlyForecast.value = forecastResponse
-                _errorMessage.value = null
-            }.onFailure { exception ->
-                Log.e("HomeViewModel", "Error fetching hourly forecast: ${exception.message}", exception)
-                _errorMessage.value = exception.message ?: "Failed to fetch hourly forecast data"
-            }
-
-            _isLoading.value = false
         }
     }
 
-
-
-    fun formatHourlyTime(timestamp: Long, timezone: Long): String {
-        val timeFormat = SimpleDateFormat("h a", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        val offsetMillis = timezone * 1000
-        calendar.timeInMillis = timestamp * 1000 + offsetMillis
-        return timeFormat.format(calendar.time)
+    fun saveHourlyForecastToLocal(forecast: HourlyForecastResponse) {
+        viewModelScope.launch {
+            try {
+                repository.saveHourlyForecastToLocal(forecast)
+                Log.d("HomeViewModel", "Hourly forecast saved to local storage")
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Failed to save hourly forecast", e)
+                _errorMessage.postValue("Failed to save forecast locally")
+            }
+        }
     }
 
+    fun saveCurrentWeatherToLocal(weather: CurrentWeatherResponse) {
+        viewModelScope.launch {
+            try {
+                repository.saveCurrentWeatherToLocal(weather)
+                Log.d("HomeViewModel", "Current weather saved to local storage")
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Failed to save current weather", e)
+                _errorMessage.postValue("Failed to save current weather locally")
+            }
+        }
+    }
 
-}
+    fun formatHourlyTime(timestamp: Long, timezoneOffset: Long): String {
+        return try {
+            val timeFormat = SimpleDateFormat("h a", Locale.getDefault())
+            // Set the timezone to the location's timezone
+            timeFormat.timeZone = TimeZone.getTimeZone("GMT")
+            val adjustedTime = timestamp * 1000 + timezoneOffset * 1000
+            timeFormat.format(Date(adjustedTime))
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error formatting time", e)
+            "--"
+        }
+    }
+    }

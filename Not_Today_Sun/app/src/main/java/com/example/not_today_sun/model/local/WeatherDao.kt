@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.not_today_sun.model.pojo.Alarm
+import com.example.not_today_sun.model.pojo.FavoriteLocation
 import com.example.not_today_sun.model.remote.CurrentWeatherResponse
 import com.example.not_today_sun.model.remote.HourlyForecastResponse
 
@@ -11,51 +13,44 @@ import com.example.not_today_sun.model.remote.HourlyForecastResponse
 @Dao
 interface WeatherDao {
 
+    // hourly forecast operations
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertForecast(forecast: HourlyForecastResponse)
+    suspend fun insertHourlyForecast(response: HourlyForecastResponse)
 
-//    @Query("SELECT * FROM hourly_forecast WHERE city_id = :cityId LIMIT 1")
-//    suspend fun getForecastByCity(cityId: Int): HourlyForecastResponse?
-//
-//    /**
-//     * Deletes forecast for a specific city
-//     * @param cityId The ID of the city
-//     */
-//    @Query("DELETE FROM hourly_forecast WHERE city_id = :cityId")
-//    suspend fun deleteForecast(cityId: Int)
 
-    /**
-     * Clears all forecast data from the database
-     */
-//    @Query("DELETE FROM hourly_forecast")
-//    suspend fun clearAllForecasts()
-//
-//    // Current Weather operations
-    /**
-     * Inserts or updates current weather in the database
-     * @param weather The weather data to insert
-     */
+    @Query("SELECT * FROM hourly_response ORDER BY id DESC LIMIT 1")
+    suspend fun getHourlyForecastFourDays(): HourlyForecastResponse?
+
+
+    @Query("DELETE FROM hourly_response")
+    suspend fun clearAllHourlyForecasts()
+
+    // Current weather operations
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCurrentWeather(weather: CurrentWeatherResponse)
+    suspend fun insertCurrentWeather(response: CurrentWeatherResponse)
 
-    /**
-     * Retrieves current weather for a specific city
-     * @param cityId The ID of the city
-     * @return The current weather data or null if not found
-     */
-    @Query("SELECT * FROM current_weather WHERE cityId = :cityId LIMIT 1")
-    suspend fun getCurrentWeatherByCity(cityId: Int): CurrentWeatherResponse?
+    @Query("SELECT * FROM current_weather ORDER BY id DESC LIMIT 1")
+    suspend fun getCurrentWeather(): CurrentWeatherResponse?
 
-    /**
-     * Deletes current weather for a specific city
-     * @param cityId The ID of the city
-     */
-    @Query("DELETE FROM current_weather WHERE cityId = :cityId")
-    suspend fun deleteCurrentWeather(cityId: Int)
-
-    /**
-     * Clears all current weather data from the database
-     */
     @Query("DELETE FROM current_weather")
     suspend fun clearAllCurrentWeather()
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFavoriteLocation(location: FavoriteLocation)
+
+    @Query("SELECT * FROM favorite_locations")
+    suspend fun getAllFavoriteLocations(): List<FavoriteLocation>
+
+    @Query("DELETE FROM favorite_locations WHERE cityName= :name")
+    suspend fun deleteFavoriteLocation(name: String)
+
+    // Alarm operations
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAlarm(alarm: Alarm)
+
+    @Query("SELECT * FROM alarms")
+    suspend fun getAllAlarms(): List<Alarm>
+
+    @Query("DELETE FROM alarms WHERE id = :id")
+    suspend fun deleteAlarm(id: Long)
 }

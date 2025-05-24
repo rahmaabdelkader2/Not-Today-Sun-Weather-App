@@ -8,12 +8,19 @@
             android:id="@+id/nav_home"
             android:icon="@drawable/ic_menu_camera"
             android:title="@string/menu_home"
-            android:name="com.example.not_today_sun.ui.home.HomeFragment"
+            android:name="com.example.not_today_sun.home.view.HomeFragment"
             tools:layout="@layout/fragment_home" />
         <item
             android:id="@+id/nav_fav"
             android:icon="@drawable/ic_menu_gallery"
+            android:name="com.example.not_today_sun.fav.view.favFragment"
+
             android:title="@string/Favorites" />
+        <item
+            android:id="@+id/nav_notification"
+            android:icon="@drawable/ic_menu_notification"
+            android:title="Notification" />
+
         <item
             android:id="@+id/nav_settings"
             android:icon="@drawable/ic_menu_slideshow"

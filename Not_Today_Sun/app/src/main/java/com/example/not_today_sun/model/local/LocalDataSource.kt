@@ -1,102 +1,87 @@
 package com.example.not_today_sun.model.local
 
+import androidx.room.util.getColumnIndexOrThrow
+import com.example.not_today_sun.model.pojo.Alarm
+import com.example.not_today_sun.model.pojo.FavoriteLocation
 import com.example.not_today_sun.model.remote.CurrentWeatherResponse
 import com.example.not_today_sun.model.remote.HourlyForecastResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-
 class LocalDataSource(private val weatherDao: WeatherDao) {
-
-    suspend fun saveForecast(forecast: HourlyForecastResponse) = withContext(Dispatchers.IO) {
+    // Hourly weather operations
+    suspend fun saveHourlyForecast(response: HourlyForecastResponse) = withContext(Dispatchers.IO) {
         try {
-            weatherDao.insertForecast(forecast)
+            weatherDao.insertHourlyForecast(response)
         } catch (e: Exception) {
             throw Exception("Failed to save forecast: ${e.message}")
         }
     }
 
-    /**
-     * Retrieves forecast for a specific city
-     * @param cityId The ID of the city
-     * @return The forecast data or null if not found
-     */
-//    suspend fun getForecast(cityId: Int): HourlyForecastResponse? = withContext(Dispatchers.IO) {
-//        try {
-//            weatherDao.getForecastByCity(cityId)
-//        } catch (e: Exception) {
-//            null
-//        }
-//    }
-
-    /**
-     * Deletes forecast for a specific city
-     * @param cityId The ID of the city
-     */
-//    suspend fun deleteForecast(cityId: Int) = withContext(Dispatchers.IO) {
-//        try {
-//            weatherDao.deleteForecast(cityId)
-//        } catch (e: Exception) {
-//            throw Exception("Failed to delete forecast: ${e.message}")
-//        }
-//    }
-
-    /**
-     * Clears all forecast data from the database
-     */
-//    suspend fun clearForecasts() = withContext(Dispatchers.IO) {
-//        try {
-//            weatherDao.clearAllForecasts()
-//        } catch (e: Exception) {
-//            throw Exception("Failed to clear forecasts: ${e.message}")
-//        }
-//    }
-
-    /**
-     * Saves current weather data to the database
-     * @param weather The weather data to save
-     */
-//    suspend fun saveCurrentWeather(weather: CurrentWeatherResponse) = withContext(Dispatchers.IO) {
-//        try {
-//            weatherDao.insertCurrentWeather(weather)
-//        } catch (e: Exception) {
-//            throw Exception("Failed to save current weather: ${e.message}")
-//        }
-//    }
-
-    /**
-     * Retrieves current weather for a specific city
-     * @param cityId The ID of the city
-     * @return The current weather data or null if not found
-     */
-    suspend fun getCurrentWeather(cityId: Int): CurrentWeatherResponse? = withContext(Dispatchers.IO) {
+    suspend fun getHourlyForecast(): HourlyForecastResponse? = withContext(Dispatchers.IO) {
         try {
-            weatherDao.getCurrentWeatherByCity(cityId)
+            weatherDao.getHourlyForecastFourDays()
         } catch (e: Exception) {
-            null
+            throw Exception("Failed to get forecast: ${e.message}")
         }
     }
 
-    /**
-     * Deletes current weather for a specific city
-     * @param cityId The ID of the city
-     */
-//    suspend fun deleteCurrentWeather(cityId: Int) = withContext(Dispatchers.IO) {
-//        try {
-//            weatherDao.deleteCurrentWeather(cityId)
-//        } catch (e: Exception) {
-//            throw Exception("Failed to delete current weather: ${e.message}")
-//        }
-//    }
+    suspend fun deleteHourlyForecast() = withContext(Dispatchers.IO) {
+        try {
+            weatherDao.clearAllHourlyForecasts()
+        } catch (e: Exception) {
+            throw Exception("Failed to delete forecast: ${e.message}")
+        }
+    }
 
-    /**
-     * Clears all current weather data from the database
-     */
-//    suspend fun clearCurrentWeather() = withContext(Dispatchers.IO) {
-//        try {
-//            weatherDao.clearAllCurrentWeather()
-//        } catch (e: Exception) {
-//            throw Exception("Failed to clear current weather: ${e.message}")
-//        }
-//    }
+
+    // Current weather operations
+    suspend fun saveCurrentWeather(response: CurrentWeatherResponse) = withContext(Dispatchers.IO) {
+        try {
+            weatherDao.insertCurrentWeather(response)
+        } catch (e: Exception) {
+            throw Exception("Failed to save current weather: ${e.message}")
+        }
+    }
+
+    suspend fun getCurrentWeather(): CurrentWeatherResponse? = withContext(Dispatchers.IO) {
+        try {
+            weatherDao.getCurrentWeather()
+        } catch (e: Exception) {
+            throw Exception("Failed to get current weather: ${e.message}")
+        }
+    }
+
+    suspend fun deleteCurrentWeather() = withContext(Dispatchers.IO) {
+        try {
+            weatherDao.clearAllCurrentWeather()
+        } catch (e: Exception) {
+            throw Exception("Failed to delete current weather: ${e.message}")
+        }
+    }
+
+    // Favorite locations operations
+    suspend fun insertFavoriteLocation(location: FavoriteLocation) = withContext(Dispatchers.IO) {
+        weatherDao.insertFavoriteLocation(location)
+    }
+    suspend fun getAllFavoriteLocations(): List<FavoriteLocation> = withContext(Dispatchers.IO) {
+       return@withContext weatherDao.getAllFavoriteLocations()
+    }
+    suspend fun deleteFavoriteLocation(cityName: String) = withContext(Dispatchers.IO) {
+        weatherDao.deleteFavoriteLocation(cityName)
+    }
+
+
+    // Alarm operations
+    suspend fun saveAlarm(alarm: Alarm) = withContext(Dispatchers.IO) {
+        weatherDao.insertAlarm(alarm)
+    }
+
+    suspend fun getAllAlarms(): List<Alarm> = withContext(Dispatchers.IO) {
+        weatherDao.getAllAlarms()
+    }
+
+    suspend fun deleteAlarm(id: Long) = withContext(Dispatchers.IO) {
+        weatherDao.deleteAlarm(id)
+    }
 }

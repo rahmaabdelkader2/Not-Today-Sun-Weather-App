@@ -3,7 +3,7 @@ package com.example.not_today_sun.Splashscreen
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.not_today_sun.InitialSetup.InitialSetup
+import com.example.not_today_sun.MainActivity
 import com.example.not_today_sun.databinding.ActivitySplashScreenBinding
 
 class SplashScreen : AppCompatActivity() {
@@ -37,7 +37,7 @@ class SplashScreen : AppCompatActivity() {
     }
 
     private fun navigateToInitialScreen() {
-        val intent = Intent(this, InitialSetup::class.java)
+        val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()
     }
