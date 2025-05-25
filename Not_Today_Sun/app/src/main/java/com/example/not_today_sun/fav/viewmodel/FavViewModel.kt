@@ -80,65 +80,11 @@ class FavViewModel(private val repository: WeatherRepository) : ViewModel() {
             try {
                 repository.deleteFavoriteLocation(location)
                 getAllFavoriteLocations()
-                _successMessage.value = "${location.cityName} deleted successfully"
+//                _successMessage.value = "${location.cityName} deleted successfully"
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to delete location: ${e.message}"
             }
         }
     }
 
-
-
-//    fun loadFavoriteLocationsWithWeather() {
-//        _isLoading.value = true
-//        viewModelScope.launch {
-//            try {
-//                Log.e(TAG, "Starting to load locations")
-//                val result = repository.getAllFavoriteLocations()
-//                if (result.isSuccess) {
-//                    val locations = result.getOrThrow()
-//                    Log.e(TAG, "Retrieved ${locations.size} locations from DB")
-//
-////                    // Optionally refresh weather data for each location
-////                    val updatedLocations = locations.map { location ->
-////                        fetchWeatherForLocation(location, apiKey)
-////                    }
-//
-////                    _favoriteLocations.value = updatedLocations
-////                    Log.e(TAG, "Updated LiveData with ${updatedLocations.size} items")
-//                } else {
-//                    Log.e(TAG, "Failed to load locations", result.exceptionOrNull())
-//                    _errorMessage.value = "Failed to load locations"
-//                }
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Critical error in loadFavoriteLocationsWithWeather", e)
-//                _errorMessage.value = "Error loading locations: ${e.message}"
-//            } finally {
-//                _isLoading.value = false
-//            }
-//        }
-//    }
-
-//    private suspend fun fetchWeatherForLocation(location: FavoriteLocation, apiKey: String): FavoriteLocation {
-//        return try {
-//            val weatherResult = repository.getCurrentWeather(
-//                latitude = location.latitude,
-//                longitude = location.longitude,
-//                apiKey = apiKey
-//            )
-//            if (weatherResult.isSuccess) {
-//                val weather = weatherResult.getOrThrow()
-//                location.copy(
-//                    maxTemp = weather.main?.tempMax,
-//                    minTemp = weather.main?.tempMin
-//                )
-//            } else {
-//                Log.w(TAG, "Failed to fetch weather for ${location.cityName}", weatherResult.exceptionOrNull())
-//                location // Return original if failed
-//            }
-//        } catch (e: Exception) {
-//            Log.e(TAG, "Error fetching weather for ${location.cityName}", e)
-//            location // Return original if failed
-//        }
-//    }
 }

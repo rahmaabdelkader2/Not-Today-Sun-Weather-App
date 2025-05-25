@@ -12,7 +12,8 @@ import java.util.*
 
 class AlarmAdapter(
     private val onDeleteClick: (Alarm) -> Unit,
-    private val onSwitchChange: (Alarm, Boolean) -> Unit
+    private val onAlarmSwitchChange: (Alarm, Boolean) -> Unit,
+    private val onNotificationSwitchChange: (Alarm, Boolean) -> Unit
 ) : ListAdapter<Alarm, AlarmAdapter.AlarmViewHolder>(DiffCallback) {
 
     companion object DiffCallback : DiffUtil.ItemCallback<Alarm>() {
@@ -26,7 +27,7 @@ class AlarmAdapter(
             parent,
             false
         )
-        return AlarmViewHolder(binding, onDeleteClick, onSwitchChange)
+        return AlarmViewHolder(binding, onDeleteClick)
     }
 
     override fun onBindViewHolder(holder: AlarmViewHolder, position: Int) {
@@ -35,8 +36,7 @@ class AlarmAdapter(
 
     class AlarmViewHolder(
         private val binding: ItemAlarmBinding,
-        private val onDeleteClick: (Alarm) -> Unit,
-        private val onSwitchChange: (Alarm, Boolean) -> Unit
+        private val onDeleteClick: (Alarm) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(alarm: Alarm) {
@@ -44,12 +44,12 @@ class AlarmAdapter(
                 textViewDate.text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(alarm.dateMillis))
                 textViewFromTime.text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(alarm.fromTimeMillis))
                 textViewToTime.text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(alarm.toTimeMillis))
-                switchAlarm.isChecked = alarm.alarmEnabled
-                switchNotification.isChecked = alarm.notificationEnabled
-
-                buttonDelete.setOnClickListener { onDeleteClick(alarm) }
-                switchAlarm.setOnCheckedChangeListener { _, isChecked ->
-                    onSwitchChange(alarm, isChecked)
+                alertType.text = when (alarm.alarmEnabled) {
+                    true -> "Alarm Enabled"
+                    false -> "Notifications Enabled"
+                }
+                buttonDelete.setOnClickListener {
+                    onDeleteClick(alarm)
                 }
             }
         }

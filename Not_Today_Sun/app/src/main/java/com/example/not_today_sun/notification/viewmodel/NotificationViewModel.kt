@@ -5,61 +5,56 @@ import androidx.lifecycle.viewModelScope
 import com.example.not_today_sun.model.pojo.Alarm
 import com.example.not_today_sun.model.repo.WeatherRepository
 import kotlinx.coroutines.launch
+import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 
-class NotificationViewModel(private val repository: WeatherRepository) : ViewModel() {
+class NotificationViewModel(private val repository: WeatherRepository, private val alarmHelper: AlarmHelper) : ViewModel() {
 
-    fun saveAlarm(
-        dateMillis: Long,
-        fromTimeMillis: Long,
-        toTimeMillis: Long,
-        alarmEnabled: Boolean,
-        notificationEnabled: Boolean,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
-    ) {
+    val _alarms = MutableLiveData<List<Alarm>>()
+    val alarms: LiveData<List<Alarm>> get() = _alarms
+
+    init {
+        getAllAlarms()
+    }
+    private val TAG = "NotificationViewModel"
+    fun getAllAlarms() {
         viewModelScope.launch {
             try {
-                val alarm = Alarm(
-                    dateMillis = dateMillis,
-                    fromTimeMillis = fromTimeMillis,
-                    toTimeMillis = toTimeMillis,
-                    alarmEnabled = alarmEnabled,
-                    notificationEnabled = notificationEnabled
-                )
-                repository.saveAlarm(alarm)
-                onSuccess()
+                val result = repository.getAllAlarms()
+                _alarms.value = result
+                Log.d(TAG, "Fetched alarms: $result")
             } catch (e: Exception) {
-                onError(e)
+                Log.e(TAG, "Error fetching alarms: ${e.message}")
+            }
+        }
+    }
+    fun deleteAlarm(alarm:Alarm)
+    {
+        viewModelScope.launch {
+            try {
+                repository.deleteAlarm(alarm.id)
+                Log.d(TAG, "Alarm deleted: $alarm")
+                getAllAlarms()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting alarm: ${e.message}")
             }
         }
     }
 
-    fun getAllAlarms(
-        onSuccess: (List<Alarm>) -> Unit,
-        onError: (Exception) -> Unit
-    ) {
+    fun addAlarm(alarm: Alarm) {
         viewModelScope.launch {
             try {
-                val alarms = repository.getAllAlarms()
-                onSuccess(alarms)
+                val alarmId = repository.saveAlarm(alarm) // Assuming it returns the ID
+                val savedAlarm = alarm.copy(id = alarmId)
+                alarmHelper.setAlarm(savedAlarm)
+                alarmHelper.setNotification(savedAlarm)
+                Log.d(TAG, "Alarm added: $alarm")
+                getAllAlarms() // Refresh the list after adding
             } catch (e: Exception) {
-                onError(e)
+                Log.e(TAG, "Error adding alarm: ${e.message}")
             }
         }
     }
 
-    fun deleteAlarm(
-        alarm: Alarm,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                repository.deleteAlarm(alarm)
-                onSuccess()
-            } catch (e: Exception) {
-                onError(e)
-            }
-        }
-    }
 }

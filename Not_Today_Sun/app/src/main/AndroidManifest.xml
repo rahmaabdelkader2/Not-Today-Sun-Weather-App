@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -17,6 +21,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Not_Today_Sun"
         tools:targetApi="31">
+        <!-- Existing receivers -->
+        <receiver
+            android:name=".notification.view.AlarmReceiver"
+            android:exported="true" />
+        <receiver
+            android:name=".notification.view.DismissAlarmReceiver"
+            android:exported="true" />
+
+        <!-- Add NotificationReceiver -->
+        <receiver
+            android:name=".notification.view.NotificationReceiver"
+            android:exported="true" />
+        <!-- Add DeleteAlarmReceiver -->
+        <receiver
+            android:name=".notification.view.DeleteAlarmReceiver"
+            android:exported="true" />
+
         <activity
             android:name=".Splashscreen.SplashScreen"
             android:exported="true">

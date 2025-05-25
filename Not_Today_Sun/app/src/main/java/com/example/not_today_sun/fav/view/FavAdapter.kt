@@ -2,6 +2,7 @@ package com.example.not_today_sun.fav.view
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -44,7 +45,18 @@ class FavAdapter(
             }
 
             binding.deleteButton.setOnClickListener {
-                onDeleteClick(location)
+                // Show confirmation dialog
+                AlertDialog.Builder(binding.root.context)
+                    .setTitle("Delete Location")
+                    .setMessage("Are you sure you want to delete ${location.cityName} from your favorites?")
+                    .setPositiveButton("Yes") { _, _ ->
+                        onDeleteClick(location) // Proceed with deletion
+                    }
+                    .setNegativeButton("No") { dialog, _ ->
+                        dialog.dismiss() // Cancel deletion
+                    }
+                    .setCancelable(true)
+                    .show()
             }
             binding.root.setOnClickListener {
                 onItemClick(location)

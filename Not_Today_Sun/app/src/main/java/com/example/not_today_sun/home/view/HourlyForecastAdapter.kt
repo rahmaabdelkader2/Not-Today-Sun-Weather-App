@@ -9,7 +9,7 @@ import com.example.not_today_sun.databinding.HourlyForecastItemBinding
 import com.example.not_today_sun.model.pojo.WeatherData
 
 class HourlyForecastAdapter(
-    private val forecastList: List<WeatherData>,
+    private var forecastList: List<WeatherData>,
     private val timezone: Long,
     private val formatHourlyTime: (Long, Long) -> String
 ) : RecyclerView.Adapter<HourlyForecastAdapter.ForecastViewHolder>() {
@@ -27,15 +27,26 @@ class HourlyForecastAdapter(
 
             // Display weather description
             val description = forecast.weather.firstOrNull()?.description
-            binding.tvWeatherDescription.text = description?.replaceFirstChar { it.uppercase() } ?: ""
+            binding.tvWeatherDescription.text =
+                description?.replaceFirstChar { it.uppercase() } ?: ""
 
             // Load weather icon with Glide
             val iconCode = forecast.weather.firstOrNull()?.icon ?: ""
-            val iconUrl = "https://openweathermap.org/img/wn/$iconCode@2x.png"
-            Glide.with(binding.root.context)
-                .load(iconUrl)
-                .error(R.drawable.ic_unknown)
-                .into(binding.ivWeatherIcon)
+            val iconUrl = "ic_$iconCode"
+            val icon = binding.root.context.resources.getIdentifier(
+                iconUrl, "drawable", binding.root.context.packageName
+            ) ?: 0
+            if (icon != 0) {
+                Glide.with(binding.root.context)
+                    .load(icon)
+                    .error(R.drawable.ic_unknown)
+                    .into(binding.ivWeatherIcon)
+            } else {
+                Glide.with(binding.root.context)
+                    .load(R.drawable.ic_unknown)
+                    .error(R.drawable.ic_unknown)
+                    .into(binding.ivWeatherIcon)
+            }
         }
     }
 
@@ -49,4 +60,9 @@ class HourlyForecastAdapter(
     }
 
     override fun getItemCount(): Int = forecastList.size
+
+    fun updateData(newForecastList: List<WeatherData>) {
+        forecastList = newForecastList
+        notifyDataSetChanged()
+    }
 }

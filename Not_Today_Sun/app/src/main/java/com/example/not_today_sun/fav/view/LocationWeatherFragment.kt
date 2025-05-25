@@ -73,13 +73,13 @@ class LocationWeatherFragment : Fragment() {
 
         setupRecyclerViews()
 
-            // Set city name and current date/time
-            binding.tvCityName.text = cityName
-            binding.tvDateTime.text = SimpleDateFormat("EEEE, MMMM dd, yyyy 'at' h:mm a", Locale.getDefault())
-                .format(Date())
+        // Set city name and current date/time
+        binding.tvCityName.text = cityName
+        binding.tvDateTime.text = SimpleDateFormat("EEEE, MMMM dd, yyyy 'at' h:mm a", Locale.getDefault())
+            .format(Date())
 
-            // Load weather data
-            viewModel.fetchWeatherData(latitude, longitude, _apiKey)
+        // Load weather data
+        viewModel.fetchWeatherData(latitude, longitude, _apiKey)
 
 
         setupObservers()

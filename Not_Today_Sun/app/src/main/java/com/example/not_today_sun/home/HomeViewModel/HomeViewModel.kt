@@ -113,7 +113,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     fun formatHourlyTime(timestamp: Long, timezoneOffset: Long): String {
         return try {
-            val timeFormat = SimpleDateFormat("h a", Locale.getDefault())
+            val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
             // Set the timezone to the location's timezone
             timeFormat.timeZone = TimeZone.getTimeZone("GMT")
             val adjustedTime = timestamp * 1000 + timezoneOffset * 1000
