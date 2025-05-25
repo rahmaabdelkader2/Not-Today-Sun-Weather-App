@@ -71,10 +71,14 @@ class LocalDataSource(private val weatherDao: WeatherDao) {
         weatherDao.deleteFavoriteLocation(cityName)
     }
 
+    suspend fun getAlarmById(id: Long): Alarm? = withContext(Dispatchers.IO) {
+        weatherDao.getAlarmById(id)
+    }
+
 
     // Alarm operations
-    suspend fun saveAlarm(alarm: Alarm) = withContext(Dispatchers.IO) {
-        weatherDao.insertAlarm(alarm)
+    suspend fun saveAlarm(alarm: Alarm):Long = withContext(Dispatchers.IO) {
+        return@withContext weatherDao.insertAlarm(alarm)
     }
 
     suspend fun getAllAlarms(): List<Alarm> = withContext(Dispatchers.IO) {

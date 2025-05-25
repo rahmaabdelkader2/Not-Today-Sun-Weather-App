@@ -9,7 +9,7 @@ import com.example.not_today_sun.databinding.HourlyForecastItemBinding
 import com.example.not_today_sun.model.pojo.WeatherData
 
 class HourlyForecastAdapter(
-    private var forecastList: List<WeatherData>,
+    private val forecastList: List<WeatherData>,
     private val timezone: Long,
     private val formatHourlyTime: (Long, Long) -> String
 ) : RecyclerView.Adapter<HourlyForecastAdapter.ForecastViewHolder>() {
@@ -60,9 +60,4 @@ class HourlyForecastAdapter(
     }
 
     override fun getItemCount(): Int = forecastList.size
-
-    fun updateData(newForecastList: List<WeatherData>) {
-        forecastList = newForecastList
-        notifyDataSetChanged()
-    }
 }

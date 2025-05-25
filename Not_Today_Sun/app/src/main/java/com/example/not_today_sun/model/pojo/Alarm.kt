@@ -6,9 +6,9 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "alarms")
 data class Alarm(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val dateMillis: Long, // Date in milliseconds (midnight of the selected day)
-    val fromTimeMillis: Long, // From time in milliseconds
-    val toTimeMillis: Long, // To time in milliseconds
+    val dateMillis: Long,
+    val fromTimeMillis: Long,
+    val toTimeMillis: Long,
     val alarmEnabled: Boolean,
     val notificationEnabled: Boolean
 )

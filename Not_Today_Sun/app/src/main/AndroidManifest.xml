@@ -13,6 +13,7 @@
 
     <application
         android:allowBackup="true"
+        android:name=".MyApplication"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -24,7 +25,11 @@
         <!-- Existing receivers -->
         <receiver
             android:name=".notification.view.AlarmReceiver"
-            android:exported="true" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".notification.view.DismissAlarmReceiver"
             android:exported="true" />
@@ -34,9 +39,7 @@
             android:name=".notification.view.NotificationReceiver"
             android:exported="true" />
         <!-- Add DeleteAlarmReceiver -->
-        <receiver
-            android:name=".notification.view.DeleteAlarmReceiver"
-            android:exported="true" />
+
 
         <activity
             android:name=".Splashscreen.SplashScreen"

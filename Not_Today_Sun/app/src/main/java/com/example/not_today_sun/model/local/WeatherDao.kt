@@ -46,11 +46,14 @@ interface WeatherDao {
 
     // Alarm operations
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAlarm(alarm: Alarm)
+    suspend fun insertAlarm(alarm: Alarm):Long
 
     @Query("SELECT * FROM alarms")
     suspend fun getAllAlarms(): List<Alarm>
 
     @Query("DELETE FROM alarms WHERE id = :id")
     suspend fun deleteAlarm(id: Long)
+
+    @Query("SELECT * FROM alarms WHERE id = :id")
+    suspend fun getAlarmById(id: Long): Alarm?
 }

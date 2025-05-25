@@ -133,10 +133,8 @@ class WeatherRepository (private val remoteDataSource: RemoteDataSource, private
         localDataSource.deleteFavoriteLocation(location.cityName)
     }
 
-    // Alarm operations
-    suspend fun saveAlarm(alarm: Alarm) {
+    suspend fun saveAlarm(alarm: Alarm): Long {
         return localDataSource.saveAlarm(alarm)
-
     }
 
     suspend fun getAllAlarms(): List<Alarm> {
@@ -144,8 +142,10 @@ class WeatherRepository (private val remoteDataSource: RemoteDataSource, private
 
     }
 
-    suspend fun deleteAlarm(alarm: Alarm) {
-        return localDataSource.deleteAlarm(alarm.id)
-
+    suspend fun deleteAlarm(alarmId: Long) {
+        return localDataSource.deleteAlarm(alarmId)
+    }
+    suspend fun getAlarmById(id: Long): Alarm? {
+        return localDataSource.getAlarmById(id)
     }
 }

@@ -300,29 +300,31 @@ class HomeFragment : Fragment() {
         viewModel.hourlyForecast.observe(viewLifecycleOwner, Observer { forecast ->
             forecast?.let {
                 Log.d("HomeFragment", "Raw hourly forecast count: ${forecast.list?.size ?: 0}")
-                Log.d("HomeFragment", "Raw forecast timestamps: ${forecast.list?.map { it.dt }}")
 
+                val calendar = Calendar.getInstance()
+                val today = calendar.get(Calendar.DAY_OF_YEAR)
                 val timezoneOffsetMillis = forecast.city.timezone * 1000L
-                // Take the next 16 data points (48 hours for 3-hourly forecast)
-                val todayForecasts = forecast.list?.take(16) ?: emptyList()
+
+                // Fallback to current day if filtering fails
+                val todayForecasts = forecast.list?.let { list ->
+                    val filtered = list.filter { weatherData ->
+                        calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
+                        calendar.get(Calendar.DAY_OF_YEAR) == today
+                    }
+                    if (filtered.isNotEmpty()) filtered.take(24) else list.take(24)
+                } ?: emptyList()
 
                 Log.d("HomeFragment", "Displaying hourly forecast count: ${todayForecasts.size}")
-                Log.d("HomeFragment", "Filtered forecast timestamps: ${todayForecasts.map { it.dt }}")
 
-                if (!::hourlyForecastAdapter.isInitialized) {
-                    hourlyForecastAdapter = HourlyForecastAdapter(
-                        todayForecasts,
-                        forecast.city.timezone.toLong(),
-                        viewModel::formatHourlyTime
-                    )
-                    binding.rvHourlyForecast.adapter = hourlyForecastAdapter
-                } else {
-                    hourlyForecastAdapter.updateData(todayForecasts)
-                }
+                hourlyForecastAdapter = HourlyForecastAdapter(
+                    todayForecasts,
+                    forecast.city.timezone.toLong(),
+                    viewModel::formatHourlyTime
+                )
+                binding.rvHourlyForecast.adapter = hourlyForecastAdapter
                 binding.rvHourlyForecast.visibility = View.VISIBLE
 
                 val dailyForecasts = forecast.list?.groupBy { weatherData ->
-                    val calendar = Calendar.getInstance()
                     calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
                     calendar.get(Calendar.DAY_OF_YEAR)
                 }?.mapValues { entry ->
@@ -342,14 +344,6 @@ class HomeFragment : Fragment() {
 
                 // Save the hourly forecast to local storage
                 viewModel.saveHourlyForecastToLocal(forecast)
-
-                if (todayForecasts.size < 16) {
-                    Snackbar.make(
-                        binding.weatherContainer,
-                        "Limited forecast data available (${todayForecasts.size} hours)",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
             }
         })
 
@@ -359,7 +353,6 @@ class HomeFragment : Fragment() {
             }
         })
     }
-
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
         binding.tvTemperature.text = String.format("%.1f°C", weather.main.temperature)
@@ -383,21 +376,23 @@ class HomeFragment : Fragment() {
             } ?: "N/A"
 
             weatherDesc.icon?.let { iconCode ->
-                val iconUrl = "ic_$iconCode"
-                val icon = context?.resources?.getIdentifier(
-                    iconUrl, "drawable", context?.packageName
-                ) ?: 0
-                if (icon != 0) {
-                    Glide.with(this)
-                        .load(icon)
-                        .error(R.drawable.ic_unknown)
-                        .into(binding.ivCurrentWeather)
-                } else {
+                val iconUrl="ic_$iconCode"
+                val icon=context?.resources?.getIdentifier(
+                    iconUrl,"drawable",context?.packageName
+                )?:0
+                if(icon!=0){
+                Glide.with(this)
+                    .load(icon)
+                    .error(R.drawable.ic_unknown)
+                    .into(binding.ivCurrentWeather)
+            }
+                else{
                     Glide.with(this)
                         .load(R.drawable.ic_unknown)
                         .into(binding.ivCurrentWeather)
                 }
-            }
+
+                }
         }
     }
 
