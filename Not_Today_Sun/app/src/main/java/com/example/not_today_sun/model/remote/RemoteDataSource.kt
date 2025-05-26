@@ -5,9 +5,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 
-class RemoteDataSource(
-    private val apiService: ApiService
-) {
+class RemoteDataSource{
 
     suspend fun getHourlyForecast(
         latitude: Double,
@@ -18,7 +16,7 @@ class RemoteDataSource(
         count: Int? = null
     ): Result<HourlyForecastResponse> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.getHourlyForecast(
+            val response = RetrofitClient.weatherApiService.getHourlyForecast(
                 latitude = latitude,
                 longitude = longitude,
                 apiKey = apiKey,
@@ -44,7 +42,7 @@ class RemoteDataSource(
         language: String = "en"
     ): Result<CurrentWeatherResponse> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.getCurrentWeather(
+            val response = RetrofitClient.weatherApiService.getCurrentWeather(
                 latitude = latitude,
                 longitude = longitude,
                 apiKey = apiKey,

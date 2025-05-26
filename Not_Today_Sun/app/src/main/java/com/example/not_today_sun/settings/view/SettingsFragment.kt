@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.not_today_sun.MainActivity
 import com.example.not_today_sun.R
 import com.example.not_today_sun.databinding.FragmentSettingsBinding
 import com.example.not_today_sun.settings.viewmodel.SettingsViewModel
@@ -29,14 +30,8 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Initialize UI based on saved preferences
         initializeUI()
-
-        // Setup listeners for radio groups
         setupRadioGroups()
-
-        // Listen for map location selection result
         setFragmentResultListener("locationRequestKey") { _, bundle ->
             try {
                 val latitude = bundle.getDouble("lat")
@@ -45,9 +40,8 @@ class SettingsFragment : Fragment() {
                     requireContext(),
                     latitude.toFloat(),
                     longitude.toFloat(),
-                    "Selected Location" // Consider adding reverse geocoding for a proper name
+                    "Selected Location"
                 )
-                // Update UI to reflect map selection
                 binding.mapArabic.isChecked = true
                 binding.gpsEnglish.isChecked = false
                 Toast.makeText(requireContext(), "Location saved successfully", Toast.LENGTH_SHORT).show()
@@ -61,7 +55,6 @@ class SettingsFragment : Fragment() {
     }
 
     private fun initializeUI() {
-        // Set location radio group based on preferences
         if (viewModel.getLocationPreference(requireContext())) {
             binding.gpsEnglish.isChecked = true
             binding.mapArabic.isChecked = false
@@ -70,7 +63,6 @@ class SettingsFragment : Fragment() {
             binding.gpsEnglish.isChecked = false
         }
 
-        // Set notification radio group based on preference
         if (viewModel.getNotificationPreference(requireContext())) {
             binding.notificationsEnabled.isChecked = true
             binding.notificationsDisabled.isChecked = false
@@ -78,10 +70,28 @@ class SettingsFragment : Fragment() {
             binding.notificationsDisabled.isChecked = true
             binding.notificationsEnabled.isChecked = false
         }
+
+        when (viewModel.getTemperatureUnit(requireContext())) {
+            "metric" -> binding.radioCelsius.isChecked = true
+            "imperial" -> binding.radioFahrenheit.isChecked = true
+            "standard" -> binding.radioKelvin.isChecked = true
+            else -> binding.radioCelsius.isChecked = true
+        }
+
+        when (viewModel.getWindSpeedUnit(requireContext())) {
+            "m/s" -> binding.radioMetersPerSecond.isChecked = true
+            "mph" -> binding.radioMilesPerHour.isChecked = true
+            else -> binding.radioMetersPerSecond.isChecked = true
+        }
+
+        when (viewModel.getLanguage(requireContext())) {
+            "en" -> binding.radioEnglish.isChecked = true
+            "ar" -> binding.radioArabic.isChecked = true
+            else -> binding.radioEnglish.isChecked = true
+        }
     }
 
     private fun setupRadioGroups() {
-        // Location radio group
         binding.locationRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 binding.gpsEnglish.id -> {
@@ -89,13 +99,11 @@ class SettingsFragment : Fragment() {
                 }
                 binding.mapArabic.id -> {
                     viewModel.saveLocationPreference(requireContext(), false, true)
-                    // Navigate to SimpleMapFragment
                     findNavController().navigate(R.id.action_settingsFragment_to_simpleMapFragment)
                 }
             }
         }
 
-        // Notifications radio group
         binding.notificationsRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 binding.notificationsEnabled.id -> {
@@ -107,17 +115,44 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        // Setup other radio groups (temperature, language, wind speed)
         binding.temperatureRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            // Handle temperature unit selection (implement as needed)
-        }
-
-        binding.languageRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            // Handle language selection (implement as needed)
+            when (checkedId) {
+                binding.radioCelsius.id -> {
+                    viewModel.saveTemperatureUnit(requireContext(), "metric")
+                }
+                binding.radioFahrenheit.id -> {
+                    viewModel.saveTemperatureUnit(requireContext(), "imperial")
+                }
+                binding.radioKelvin.id -> {
+                    viewModel.saveTemperatureUnit(requireContext(), "standard")
+                }
+            }
         }
 
         binding.windSpeedRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            // Handle wind speed unit selection (implement as needed)
+            when (checkedId) {
+                binding.radioMetersPerSecond.id -> {
+                    viewModel.saveWindSpeedUnit(requireContext(), "m/s")
+                }
+                binding.radioMilesPerHour.id -> {
+                    viewModel.saveWindSpeedUnit(requireContext(), "mph")
+                }
+            }
+        }
+
+        binding.languageRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                binding.radioEnglish.id -> {
+                    viewModel.saveLanguage(requireContext(), "en")
+                    (requireActivity() as MainActivity).updateLocale("en")
+                    (requireActivity() as MainActivity).restartActivity(findNavController().currentDestination?.id ?: R.id.settingsFragment)
+                }
+                binding.radioArabic.id -> {
+                    viewModel.saveLanguage(requireContext(), "ar")
+                    (requireActivity() as MainActivity).updateLocale("ar")
+                    (requireActivity() as MainActivity).restartActivity(findNavController().currentDestination?.id ?: R.id.settingsFragment)
+                }
+            }
         }
     }
 

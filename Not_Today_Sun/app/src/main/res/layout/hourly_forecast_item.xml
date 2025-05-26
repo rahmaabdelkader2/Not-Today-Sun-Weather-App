@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     app:cardCornerRadius="8dp"
@@ -48,11 +49,22 @@
             android:layout_marginTop="4dp" />
 
         <TextView
-            android:id="@+id/tvWeatherDescription"
+            android:id="@+id/tvWindSpeed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
             app:layout_constraintTop_toBottomOf="@id/tvTemperature"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="4dp"
+            android:text="@string/wind_speed_format" />
+
+        <TextView
+            android:id="@+id/tvWeatherDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@id/tvWindSpeed"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="4dp" />

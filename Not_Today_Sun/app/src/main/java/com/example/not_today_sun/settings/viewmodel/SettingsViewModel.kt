@@ -2,11 +2,10 @@ package com.example.not_today_sun.settings.viewmodel
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LiveData
+import android.content.res.Configuration
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import android.Manifest
+import java.util.Locale
 
 class SettingsViewModel : ViewModel() {
     companion object {
@@ -17,37 +16,35 @@ class SettingsViewModel : ViewModel() {
         private const val KEY_MAP_LAT = "map_lat"
         private const val KEY_MAP_LON = "map_lon"
         private const val KEY_MAP_LOCATION_NAME = "map_location_name"
+        private const val KEY_TEMPERATURE_UNIT = "temperature_unit"
+        private const val KEY_WIND_SPEED_UNIT = "wind_speed_unit"
+        private const val KEY_LANGUAGE = "language"
     }
 
     private val _notificationEnabled = MutableLiveData<Boolean>()
-    val notificationEnabled: LiveData<Boolean> get() = _notificationEnabled
 
     init {
-        _notificationEnabled.value = false // Initialize, will be updated in getNotificationPreference
+        _notificationEnabled.value = false
     }
 
     private fun getSharedPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    // Get current location preference (GPS or Map)
     fun getLocationPreference(context: Context): Boolean {
         return getSharedPreferences(context).getBoolean(KEY_LOCATION, true)
     }
 
-    // Get current map usage preference
     fun getMapPreference(context: Context): Boolean {
         return getSharedPreferences(context).getBoolean(KEY_MAP, false)
     }
 
-    // Get notification preference
     fun getNotificationPreference(context: Context): Boolean {
         val enabled = getSharedPreferences(context).getBoolean(KEY_NOTIFICATIONS, false)
         _notificationEnabled.postValue(enabled)
         return enabled
     }
 
-    // Save location preference (GPS or Map)
     fun saveLocationPreference(context: Context, useGps: Boolean, useMap: Boolean) {
         with(getSharedPreferences(context).edit()) {
             putBoolean(KEY_LOCATION, useGps)
@@ -61,7 +58,6 @@ class SettingsViewModel : ViewModel() {
         }
     }
 
-    // Save map location
     fun saveMapLocation(context: Context, latitude: Float, longitude: Float, locationName: String) {
         with(getSharedPreferences(context).edit()) {
             putFloat(KEY_MAP_LAT, latitude)
@@ -73,7 +69,6 @@ class SettingsViewModel : ViewModel() {
         }
     }
 
-    // Save notification preference
     fun saveNotificationPreference(context: Context, enabled: Boolean) {
         with(getSharedPreferences(context).edit()) {
             putBoolean(KEY_NOTIFICATIONS, enabled)
@@ -82,13 +77,46 @@ class SettingsViewModel : ViewModel() {
         _notificationEnabled.postValue(enabled)
     }
 
-    // Get saved map location
-    fun getMapLocation(context: Context): Triple<Float?, Float?, String?> {
-        val prefs = getSharedPreferences(context)
-        return Triple(
-            if (prefs.contains(KEY_MAP_LAT)) prefs.getFloat(KEY_MAP_LAT, 0f) else null,
-            if (prefs.contains(KEY_MAP_LON)) prefs.getFloat(KEY_MAP_LON, 0f) else null,
-            prefs.getString(KEY_MAP_LOCATION_NAME, null)
-        )
+    fun saveTemperatureUnit(context: Context, unit: String) {
+        with(getSharedPreferences(context).edit()) {
+            putString(KEY_TEMPERATURE_UNIT, unit)
+            apply()
+        }
+    }
+
+    fun getTemperatureUnit(context: Context): String {
+        return getSharedPreferences(context).getString(KEY_TEMPERATURE_UNIT, "standard") ?: "standard"
+    }
+
+    fun saveWindSpeedUnit(context: Context, unit: String) {
+        with(getSharedPreferences(context).edit()) {
+            putString(KEY_WIND_SPEED_UNIT, unit)
+            apply()
+        }
+    }
+
+    fun getWindSpeedUnit(context: Context): String {
+        return getSharedPreferences(context).getString(KEY_WIND_SPEED_UNIT, "m/s") ?: "m/s"
+    }
+
+    fun saveLanguage(context: Context, language: String) {
+        with(getSharedPreferences(context).edit()) {
+            putString(KEY_LANGUAGE, language)
+            apply()
+        }
+        // Apply locale change
+        updateLocale(context, language)
+    }
+
+    private fun updateLocale(context: Context, languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+        val config = Configuration(context.resources.configuration)
+        config.setLocale(locale)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    }
+
+    fun getLanguage(context: Context): String {
+        return getSharedPreferences(context).getString(KEY_LANGUAGE, "en") ?: "en"
     }
 }

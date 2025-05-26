@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Not_Today_Sun</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">اعدادات</string>
+
+    <string name="menu_home">الصفحه الرئسيه</string>
+    <string name="Home">الصفحه الرئسيه</string>
+
+    <string name="menu_gallery">الصور</string>
+    <string name="menu_slideshow">عرض</string>
+    <string name="Settings">الأعدادات</string>
+    <string name="Favorites">المفضلات</string>
+
+    <string name="temperature_format">%.1f%s</string>
+    <string name="wind_speed_format">%.1f %s</string>
+
+    <string name="Done">تمام</string>
+    <string name="InitialSetup">الاعدادات الأوليه </string>
+    <string name="LocationOptions">اختياؤات المكان</string>
+    <string name="Map">الخريطه</string>
+    <string name="GPS">تحديد مواقع</string>
+    <string name="Notifications">اشعارات</string>
+    <string name="Enable">تفعيل</string>
+
+    <string name="Save">حفظ</string>
+    <string name="Alarm">منبه</string>
+    <string name="From">من</string>
+    <string name="To">الي</string>
+    <string name="Location">الموقع</string>
+    <string name="Tempreture">الحراره</string>
+    <string name="Language">اللغه</string>
+    <string name="WindSpeed">سرعه الرياح</string>
+    <string name="Disable">ايقاف</string>
+    <string name="Delete">مسح</string>
+    <string name="English">الانجليزيه</string>
+    <string name="Arabic">العربيه</string>
+    <string name="Celsius">درجه م</string>
+    <string name="Fahrenheit">فهرنهايت</string>
+    <string name="Kelvin">كلفن</string>
+    <string name="meter">متر / ثانيه</string>
+    <string name="mph">ميل / الساعه</string>
+</resources>

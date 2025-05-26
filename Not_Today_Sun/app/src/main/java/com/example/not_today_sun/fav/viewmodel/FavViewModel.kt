@@ -80,7 +80,6 @@ class FavViewModel(private val repository: WeatherRepository) : ViewModel() {
             try {
                 repository.deleteFavoriteLocation(location)
                 getAllFavoriteLocations()
-//                _successMessage.value = "${location.cityName} deleted successfully"
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to delete location: ${e.message}"
             }

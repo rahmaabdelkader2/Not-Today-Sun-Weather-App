@@ -3,6 +3,7 @@ package com.example.not_today_sun.home.view
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Bundle
@@ -49,10 +50,10 @@ class HomeFragment : Fragment() {
     private val sharedPref by lazy {
         requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
     }
-
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModelFactory((requireActivity() as MainActivity).weatherRepository)
     }
+    private lateinit var preferenceChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -93,7 +94,20 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerViews()
         setupObservers()
+        setupPreferenceChangeListener()
         checkAndTriggerLocation()
+    }
+
+    private fun setupPreferenceChangeListener() {
+        preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                "use_gps", "use_map", "map_lat", "map_lon", "temperature_unit", "wind_speed_unit", "language" -> {
+                    Log.d("HomeFragment", "Preference changed: $key, refreshing weather data")
+                    checkAndTriggerLocation()
+                }
+            }
+        }
+        sharedPref.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
     }
 
     private fun setupRecyclerViews() {
@@ -249,7 +263,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun fetchWeatherWithFallback() {
-        // Default to London if no valid location is available
         fetchWeatherData(51.5074, -0.1278)
         Snackbar.make(
             binding.weatherContainer,
@@ -275,12 +288,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun fetchWeatherData(latitude: Double, longitude: Double) {
+        val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
+        val language = sharedPref.getString("language", "en") ?: "en"
+
         viewModel.fetchWeatherData(
             latitude = latitude,
             longitude = longitude,
-            apiKey = _apiKey
+            apiKey = _apiKey,
+            units = temperatureUnit,
+            language = language
         )
-        Log.d("HomeFragment", "Fetching weather for: $latitude, $longitude")
+        Log.d("HomeFragment", "Fetching weather for: $latitude, $longitude, units: $temperatureUnit, language: $language")
     }
 
     private fun setupObservers() {
@@ -292,7 +310,6 @@ class HomeFragment : Fragment() {
         viewModel.currentWeather.observe(viewLifecycleOwner, Observer { weather ->
             weather?.let {
                 updateWeatherUI(it)
-                // Save the current weather to local storage
                 viewModel.saveCurrentWeatherToLocal(it)
             }
         })
@@ -305,7 +322,6 @@ class HomeFragment : Fragment() {
                 val today = calendar.get(Calendar.DAY_OF_YEAR)
                 val timezoneOffsetMillis = forecast.city.timezone * 1000L
 
-                // Fallback to current day if filtering fails
                 val todayForecasts = forecast.list?.let { list ->
                     val filtered = list.filter { weatherData ->
                         calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
@@ -319,7 +335,8 @@ class HomeFragment : Fragment() {
                 hourlyForecastAdapter = HourlyForecastAdapter(
                     todayForecasts,
                     forecast.city.timezone.toLong(),
-                    viewModel::formatHourlyTime
+                    viewModel::formatHourlyTime,
+                    requireContext()
                 )
                 binding.rvHourlyForecast.adapter = hourlyForecastAdapter
                 binding.rvHourlyForecast.visibility = View.VISIBLE
@@ -332,17 +349,18 @@ class HomeFragment : Fragment() {
                     DailyForecast(
                         date = entry.value.first().dt,
                         minTemp = temps.minOrNull() ?: 0f,
-                        maxTemp = temps.maxOrNull() ?: 0f
+                        maxTemp = temps.maxOrNull() ?: 0f,
+                        windSpeed = entry.value.maxOfOrNull { it.wind.speed } ?: 0f
                     )
                 }?.values?.toList()?.drop(1) ?: emptyList()
 
                 dailyForecastAdapter = DailyForecastAdapter(
                     dailyForecasts,
-                    forecast.city.timezone.toLong()
+                    forecast.city.timezone.toLong(),
+                    requireContext()
                 )
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
 
-                // Save the hourly forecast to local storage
                 viewModel.saveHourlyForecastToLocal(forecast)
             }
         })
@@ -353,11 +371,19 @@ class HomeFragment : Fragment() {
             }
         })
     }
+
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
-        binding.tvTemperature.text = String.format("%.1f°C", weather.main.temperature)
+        val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
+        val unitSymbol = when (temperatureUnit) {
+            "metric" -> "°C"
+            "imperial" -> "°F"
+            "standard" -> "K"
+            else -> "°C"
+        }
+        binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
+        binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
 
-        // Format date and time with location's timezone
         val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
         dateFormat.timeZone = TimeZone.getTimeZone("GMT")
         val adjustedTime = weather.dateTime * 1000 + weather.timezone * 1000
@@ -365,8 +391,15 @@ class HomeFragment : Fragment() {
         val formattedTime = viewModel.formatHourlyTime(weather.dateTime, weather.timezone.toLong())
         binding.tvDateTime.text = "$formattedDate at $formattedTime"
 
+        val windSpeedUnit = sharedPref.getString("wind_speed_unit", "m/s") ?: "m/s"
+        val windSpeed = if (windSpeedUnit == "mph") {
+            weather.wind.speed * 2.23694
+        } else {
+            weather.wind.speed
+        }
+        binding.tvWind.text = String.format("Wind: %.1f %s", windSpeed, windSpeedUnit)
+
         binding.tvHumidity.text = "Humidity: ${weather.main.humidity}%"
-        binding.tvWind.text = "Wind: ${weather.wind.speed} m/s"
         binding.tvPressure.text = "Pressure: ${weather.main.pressure} hPa"
         binding.tvClouds.text = "Clouds: ${weather.clouds.cloudiness}%"
 
@@ -376,28 +409,27 @@ class HomeFragment : Fragment() {
             } ?: "N/A"
 
             weatherDesc.icon?.let { iconCode ->
-                val iconUrl="ic_$iconCode"
-                val icon=context?.resources?.getIdentifier(
-                    iconUrl,"drawable",context?.packageName
-                )?:0
-                if(icon!=0){
-                Glide.with(this)
-                    .load(icon)
-                    .error(R.drawable.ic_unknown)
-                    .into(binding.ivCurrentWeather)
-            }
-                else{
+                val iconUrl = "ic_$iconCode"
+                val icon = context?.resources?.getIdentifier(
+                    iconUrl, "drawable", context?.packageName
+                ) ?: 0
+                if (icon != 0) {
+                    Glide.with(this)
+                        .load(icon)
+                        .error(R.drawable.ic_unknown)
+                        .into(binding.ivCurrentWeather)
+                } else {
                     Glide.with(this)
                         .load(R.drawable.ic_unknown)
                         .into(binding.ivCurrentWeather)
                 }
-
-                }
+            }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        sharedPref.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
         _binding = null
         handler.removeCallbacksAndMessages(null)
     }

@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -23,6 +24,7 @@ import com.example.not_today_sun.model.local.WeatherDatabase
 import com.example.not_today_sun.model.remote.RemoteDataSource
 import com.example.not_today_sun.model.remote.RetrofitClient
 import com.example.not_today_sun.model.repo.WeatherRepository
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -32,17 +34,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
+    lateinit var weatherRepository: WeatherRepository
 
-    private val database: WeatherDatabase by lazy {
-        Log.d(TAG, "Initializing WeatherDatabase")
-        WeatherDatabase.getDatabase(this)
-    }
-    val weatherRepository: WeatherRepository by lazy {
-        Log.d(TAG, "Initializing WeatherRepository")
-        val remoteDataSource = RemoteDataSource(RetrofitClient.weatherApiService)
-        val localDataSource = LocalDataSource(database.weatherDao())
-        WeatherRepository(remoteDataSource, localDataSource)
-    }
+
+
 
     private val requestExactAlarmPermission = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -69,11 +64,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        weatherRepository= WeatherRepository.getInstance(
+            remoteDataSource = RemoteDataSource(),
+            localDataSource = LocalDataSource(WeatherDatabase.getDatabase(this).weatherDao())
+        )
+
+
+
         Log.d(TAG, "MainActivity.onCreate called")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setSupportActionBar(binding.appBarMain.toolbar)
+        val language = getSharedPreferences("WeatherSettings", MODE_PRIVATE)
+            .getString("language", "en") ?: "en"
+        updateLocale(language)
         navController = findNavController(R.id.nav_host_fragment_content_main)
 
         val sharedPrefs = getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
@@ -179,5 +185,19 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "Battery optimization already disabled")
             }
         }
+    }
+    fun updateLocale(languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+        val config = Configuration(resources.configuration)
+        config.setLocale(locale)
+        resources.updateConfiguration(config, resources.displayMetrics)
+    }
+
+    fun restartActivity(currentDestinationId: Int = R.id.settingsFragment) {
+        val intent = intent
+        intent.putExtra("destinationId", currentDestinationId)
+        finish()
+        startActivity(intent)
     }
 }

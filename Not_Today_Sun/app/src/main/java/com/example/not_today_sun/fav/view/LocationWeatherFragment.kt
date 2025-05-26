@@ -1,5 +1,6 @@
 package com.example.not_today_sun.fav.view
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -30,6 +31,9 @@ class LocationWeatherFragment : Fragment() {
     private lateinit var repository: WeatherRepository
     private lateinit var hourlyForecastAdapter: HourlyForecastAdapter
     private lateinit var dailyForecastAdapter: DailyForecastAdapter
+    private val sharedPref by lazy {
+        requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
+    }
 
     // Factory companion object
     companion object {
@@ -48,6 +52,7 @@ class LocationWeatherFragment : Fragment() {
             }
         }
     }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -73,13 +78,11 @@ class LocationWeatherFragment : Fragment() {
 
         setupRecyclerViews()
 
-        // Set city name and current date/time
-        binding.tvCityName.text = cityName
-        binding.tvDateTime.text = SimpleDateFormat("EEEE, MMMM dd, yyyy 'at' h:mm a", Locale.getDefault())
-            .format(Date())
+        // Load weather data with preferences
+        val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
+        val language = sharedPref.getString("language", "en") ?: "en"
+        viewModel.fetchWeatherData(latitude, longitude, _apiKey, units = temperatureUnit, language = language)
 
-        // Load weather data
-        viewModel.fetchWeatherData(latitude, longitude, _apiKey)
 
 
         setupObservers()
@@ -127,7 +130,8 @@ class LocationWeatherFragment : Fragment() {
                 hourlyForecastAdapter = HourlyForecastAdapter(
                     todayForecasts,
                     forecast.city.timezone.toLong(),
-                    viewModel::formatHourlyTime
+                    viewModel::formatHourlyTime,
+                    requireContext()
                 )
                 binding.rvHourlyForecast.adapter = hourlyForecastAdapter
                 binding.rvHourlyForecast.visibility = View.VISIBLE
@@ -138,16 +142,19 @@ class LocationWeatherFragment : Fragment() {
                     calendar.get(Calendar.DAY_OF_YEAR)
                 }.mapValues { entry ->
                     val temps = entry.value.map { it.main.temp }
+                    val windSpeeds = entry.value.map { it.wind.speed }
                     DailyForecast(
                         date = entry.value.first().dt,
                         minTemp = temps.minOrNull() ?: 0f,
-                        maxTemp = temps.maxOrNull() ?: 0f
+                        maxTemp = temps.maxOrNull() ?: 0f,
+                        windSpeed = windSpeeds.maxOrNull() ?: 0f // Compute max wind speed for the day
                     )
                 }.values.toList().drop(1)
 
                 dailyForecastAdapter = DailyForecastAdapter(
                     dailyForecasts,
-                    forecast.city.timezone.toLong()
+                    forecast.city.timezone.toLong(),
+                    requireContext()
                 )
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
 
@@ -164,15 +171,32 @@ class LocationWeatherFragment : Fragment() {
 
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
-        binding.tvTemperature.text = String.format("%.1f°C", weather.main.temperature)
 
+        // Apply temperature unit from SharedPreferences
+        val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
+        val unitSymbol = when (temperatureUnit) {
+            "metric" -> "°C"
+            "imperial" -> "°F"
+            "standard" -> "K"
+            else -> "°C"
+        }
+        binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
+        // Format date and time with location's timezone
         val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy 'at' h:mm a", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = weather.dateTime * 1000 + weather.timezone * 1000
-        binding.tvDateTime.text = dateFormat.format(calendar.time)
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT")
+        val adjustedTime = weather.dateTime * 1000 + weather.timezone * 1000
+        binding.tvDateTime.text = dateFormat.format(Date(adjustedTime))
+
+        // Apply wind speed unit from SharedPreferences
+        val windSpeedUnit = sharedPref.getString("wind_speed_unit", "m/s") ?: "m/s"
+        val windSpeed = if (windSpeedUnit == "mph") {
+            weather.wind.speed * 2.23694 // Convert m/s to mph
+        } else {
+            weather.wind.speed
+        }
+        binding.tvWind.text = String.format("Wind: %.1f %s", windSpeed, windSpeedUnit)
 
         binding.tvHumidity.text = "Humidity: ${weather.main.humidity}%"
-        binding.tvWind.text = "Wind: ${weather.wind.speed} m/s"
         binding.tvPressure.text = "Pressure: ${weather.main.pressure} hPa"
         binding.tvClouds.text = "Clouds: ${weather.clouds.cloudiness}%"
 
@@ -182,11 +206,19 @@ class LocationWeatherFragment : Fragment() {
             } ?: "N/A"
 
             weatherDesc.icon?.let { iconCode ->
-                Glide.with(this)
-                    .load("https://openweathermap.org/img/wn/$iconCode@2x.png")
-                    .error(R.drawable.ic_unknown)
-                    .into(binding.ivCurrentWeather)
-            } ?: binding.ivCurrentWeather.setImageResource(R.drawable.ic_unknown)
+                val iconUrl = "ic_$iconCode"
+                val icon = context?.resources?.getIdentifier(
+                    iconUrl, "drawable", context?.packageName
+                ) ?: 0
+                if (icon != 0) {
+                    Glide.with(this)
+                        .load(icon)
+                        .error(R.drawable.ic_unknown)
+                        .into(binding.ivCurrentWeather)
+                } else {
+                    binding.ivCurrentWeather.setImageResource(R.drawable.ic_unknown)
+                }
+            }
         }
     }
 

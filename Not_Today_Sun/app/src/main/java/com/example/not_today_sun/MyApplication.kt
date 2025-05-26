@@ -19,9 +19,8 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "MyApplication.onCreate called")
-        val database = WeatherDatabase.getDatabase(this)
-        val remoteDataSource = RemoteDataSource(RetrofitClient.weatherApiService)
-        val localDataSource = LocalDataSource(database.weatherDao())
-        weatherRepository = WeatherRepository(remoteDataSource, localDataSource)
-    }
+        weatherRepository= WeatherRepository.getInstance(
+            remoteDataSource = RemoteDataSource(),
+            localDataSource = LocalDataSource(WeatherDatabase.getDatabase(this).weatherDao())
+        )    }
 }

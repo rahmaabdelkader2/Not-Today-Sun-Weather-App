@@ -68,58 +68,19 @@ class WeatherRepository (private val remoteDataSource: RemoteDataSource, private
     }
 
     // Local operations for Hourly Forecast
-    suspend fun saveHourlyForecastToLocal(response: HourlyForecastResponse): Result<Unit> {
-        return try {
-            localDataSource.saveHourlyForecast(response)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun saveHourlyForecastToLocal(response: HourlyForecastResponse) {
+        return localDataSource.saveHourlyForecast(response)
+
     }
 
-    suspend fun getHourlyForecastFromLocal(): Result<HourlyForecastResponse?> {
-        return try {
-            Result.success(localDataSource.getHourlyForecast())
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
-    suspend fun deleteHourlyForecastFromLocal(): Result<Unit> {
-        return try {
-            localDataSource.deleteHourlyForecast()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
     // Local operations for Current Weather
-    suspend fun saveCurrentWeatherToLocal(response: CurrentWeatherResponse): Result<Unit> {
-        return try {
-            localDataSource.saveCurrentWeather(response)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun saveCurrentWeatherToLocal(response: CurrentWeatherResponse) {
+        return localDataSource.saveCurrentWeather(response)
     }
 
-    suspend fun getCurrentWeatherFromLocal(): Result<CurrentWeatherResponse?> {
-        return try {
-            Result.success(localDataSource.getCurrentWeather())
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
-    suspend fun deleteCurrentWeatherFromLocal(): Result<Unit> {
-        return try {
-            localDataSource.deleteCurrentWeather()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
     suspend fun saveFavoriteLocation(location: FavoriteLocation) {
         localDataSource.insertFavoriteLocation(location)
