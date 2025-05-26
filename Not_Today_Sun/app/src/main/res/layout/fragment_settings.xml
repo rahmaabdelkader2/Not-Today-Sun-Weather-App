@@ -32,14 +32,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:buttonTint="@color/blue"
-            android:text="GPS (English)" />
+            android:text="GPS" />
 
         <RadioButton
             android:id="@+id/mapArabic"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:buttonTint="@color/blue"
-            android:text="Map (Arabic)" />
+            android:text="Map" />
     </RadioGroup>
 
     <!-- Temperature Section -->
@@ -174,23 +174,33 @@
 
     <RadioGroup
         android:id="@+id/notificationsRadioGroup"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="@+id/textView6"
+        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView6">
 
         <RadioButton
-            android:id="@+id/notificationsOn"
+            android:id="@+id/notificationsEnabled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/blue"
-            android:text="Enable" />
+            android:layout_marginStart="15dp"
+            android:layout_marginTop="3dp"
+            android:text="Enabled"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView6" />
 
         <RadioButton
-            android:id="@+id/notificationsOff"
+            android:id="@+id/notificationsDisabled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/blue"
-            android:text="Disable" />
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="1dp"
+            android:text="Disabled"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/notificationsEnabled" />
+
     </RadioGroup>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

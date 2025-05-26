@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -32,6 +33,8 @@ import com.example.not_today_sun.model.pojo.Alarm
 class NotificationFragment : Fragment() {
     companion object {
         private const val TAG = "AlarmDebug"
+        private const val PREFS_NAME="WeatherSettings"
+        private const val KEY_NOTIFICATION = "notification_enabled"
     }
 
     private var _binding: FragmentNotificationBinding? = null
@@ -40,9 +43,9 @@ class NotificationFragment : Fragment() {
     private val viewModel: NotificationViewModel by viewModels {
         NotificationViewModelFactory(
             (requireActivity() as MainActivity).weatherRepository,
-            alarmHelper
-        )
-    }
+            alarmHelper,getSharedPreferences()
+        )}
+
     private lateinit var selectedDate: Calendar
     private lateinit var alarmAdapter: AlarmAdapter
     private lateinit var alarmDismissReceiver: BroadcastReceiver // Add receiver
@@ -239,6 +242,9 @@ class NotificationFragment : Fragment() {
     private fun showError(exception: Exception) {
         Log.e(TAG, "Error: ${exception.message}", exception)
         Toast.makeText(requireContext(), "Error: ${exception.message}", Toast.LENGTH_SHORT).show()
+    }
+    private fun getSharedPreferences(): SharedPreferences {
+        return requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     override fun onDestroyView() {

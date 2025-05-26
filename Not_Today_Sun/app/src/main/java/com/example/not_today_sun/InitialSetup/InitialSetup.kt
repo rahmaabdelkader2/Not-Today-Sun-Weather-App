@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
@@ -43,8 +44,11 @@ class InitialSetupFragment : Fragment() {
                     putFloat("map_lon", longitude.toFloat())
                     putString("map_location_name", "Selected Location")
                     putBoolean("is_first_boot", false)
+                    putBoolean("use_gps", false)
+                    putBoolean("use_map", true)
                     apply()
                 }
+                Toast.makeText(requireContext(), "Location saved successfully", Toast.LENGTH_SHORT).show()
                 // Proceed to MainActivity with HomeFragment
                 startActivity(Intent(requireContext(), MainActivity::class.java).apply {
                     putExtra("navigate_to_home", true)
@@ -63,6 +67,7 @@ class InitialSetupFragment : Fragment() {
                     putBoolean("is_first_boot", false)
                     apply()
                 }
+                Toast.makeText(requireContext(), "Failed to select location, defaulting to GPS", Toast.LENGTH_SHORT).show()
                 // Proceed to MainActivity with HomeFragment
                 startActivity(Intent(requireContext(), MainActivity::class.java).apply {
                     putExtra("navigate_to_home", true)
@@ -83,6 +88,9 @@ class InitialSetupFragment : Fragment() {
                     remove("map_location_name")
                     apply()
                 }
+            } else if (!binding.mapCheckBox.isChecked) {
+                // Ensure at least one is checked
+                binding.gpsCheckBox.isChecked = true
             }
         }
 
@@ -95,8 +103,11 @@ class InitialSetupFragment : Fragment() {
                     putBoolean("use_map", true)
                     apply()
                 }
-            } else {
+            } else if (!binding.gpsCheckBox.isChecked) {
+                // Ensure at least one is checked
+                binding.gpsCheckBox.isChecked = true
                 with(settingsPrefs.edit()) {
+                    putBoolean("use_gps", true)
                     putBoolean("use_map", false)
                     remove("map_lat")
                     remove("map_lon")
@@ -116,6 +127,10 @@ class InitialSetupFragment : Fragment() {
 
         // Handle OK Button
         binding.okButton.setOnClickListener {
+            if (!binding.gpsCheckBox.isChecked && !binding.mapCheckBox.isChecked) {
+                Toast.makeText(requireContext(), "Please select a location option", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if (binding.mapCheckBox.isChecked) {
                 // Navigate to SimpleMapFragment
                 findNavController().navigate(R.id.action_initialSetupFragment_to_simpleMapFragment)

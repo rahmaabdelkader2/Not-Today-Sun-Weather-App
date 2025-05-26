@@ -22,7 +22,7 @@
             android:title="Notification" />
 
         <item
-            android:id="@+id/nav_settings"
+            android:id="@+id/settingsFragment"
             android:icon="@drawable/ic_settings"
             android:title="@string/Settings" />
     </group>
