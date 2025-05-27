@@ -17,21 +17,14 @@ class SplashScreen : AppCompatActivity() {
 
         binding.animationView.addAnimatorListener(object : android.animation.Animator.AnimatorListener {
             override fun onAnimationStart(animation: android.animation.Animator) {
-                // Optional: Handle animation start if needed
             }
-
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                // Navigate to InitialScreen when animation ends
-                navigateToInitialScreen()
+                navigateToInitialScreen()  // navigate to InitialScreen when animation ends
             }
-
             override fun onAnimationCancel(animation: android.animation.Animator) {
-                // Navigate on cancel to avoid getting stuck
                 navigateToInitialScreen()
             }
-
             override fun onAnimationRepeat(animation: android.animation.Animator) {
-                // Not needed since loop is false
             }
         })
     }

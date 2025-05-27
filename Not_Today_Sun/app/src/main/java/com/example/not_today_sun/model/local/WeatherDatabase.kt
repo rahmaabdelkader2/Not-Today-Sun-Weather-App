@@ -12,7 +12,7 @@ import com.example.not_today_sun.model.remote.HourlyForecastResponse
 
 @Database(
     entities = [HourlyForecastResponse::class, CurrentWeatherResponse::class, FavoriteLocation::class, Alarm::class],
-    version = 3, // Increment version due to schema change
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -30,7 +30,7 @@ abstract class WeatherDatabase : RoomDatabase() {
                     WeatherDatabase::class.java,
                     "weather_database"
                 )
-                    .fallbackToDestructiveMigration() // Note: Use proper migration in production
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

@@ -33,28 +33,6 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromHourlyForecastResponseList(value: List<HourlyForecastResponse>): String {
-        return gson.toJson(value)
-    }
-
-    @TypeConverter
-    fun toHourlyForecastResponseList(value: String): List<HourlyForecastResponse> {
-        val listType = object : TypeToken<List<HourlyForecastResponse>>() {}.type
-        return gson.fromJson(value, listType)
-    }
-
-    @TypeConverter
-    fun fromCurrentWeatherResponseList(value: List<CurrentWeatherResponse>): String {
-        return gson.toJson(value)
-    }
-
-    @TypeConverter
-    fun toCurrentWeatherResponseList(value: String): List<CurrentWeatherResponse> {
-        val listType = object : TypeToken<List<CurrentWeatherResponse>>() {}.type
-        return gson.fromJson(value, listType)
-    }
-
-    @TypeConverter
     fun fromCity(value: City): String {
         return gson.toJson(value)
     }
@@ -63,4 +41,28 @@ class Converters {
     fun toCity(value: String): City {
         return gson.fromJson(value, City::class.java)
     }
+
+//    @TypeConverter
+//    fun fromHourlyForecastResponseList(value: List<HourlyForecastResponse>): String {
+//        return gson.toJson(value)
+//    }
+//
+//    @TypeConverter
+//    fun toHourlyForecastResponseList(value: String): List<HourlyForecastResponse> {
+//        val listType = object : TypeToken<List<HourlyForecastResponse>>() {}.type
+//        return gson.fromJson(value, listType)
+//    }
+//
+//    @TypeConverter
+//    fun fromCurrentWeatherResponseList(value: List<CurrentWeatherResponse>): String {
+//        return gson.toJson(value)
+//    }
+//
+//    @TypeConverter
+//    fun toCurrentWeatherResponseList(value: String): List<CurrentWeatherResponse> {
+//        val listType = object : TypeToken<List<CurrentWeatherResponse>>() {}.type
+//        return gson.fromJson(value, listType)
+//    }
+
+
 }

@@ -1,4 +1,4 @@
-package com.example.not_today_sun
+package com.example.not_today_sun.gps
 
 import android.Manifest
 import android.app.AlertDialog
@@ -24,13 +24,6 @@ class GpsUtils(
 ) {
     private val fusedLocationClient: FusedLocationProviderClient by lazy {
         LocationServices.getFusedLocationProviderClient(context)
-    }
-
-    fun checkLocationPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
     }
 
     fun showPermissionRationale() {

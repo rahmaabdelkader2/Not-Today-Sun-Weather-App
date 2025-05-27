@@ -6,6 +6,7 @@ plugins {
 }
 
 android {
+
     namespace = "com.example.not_today_sun"
     compileSdk = 35
 
@@ -13,6 +14,17 @@ android {
         viewBinding=true
         buildConfig=true
     }
+
+//    testOptions {
+//        unitTests {
+//            all {
+//                it.enabled = true
+//                // Enable JUnit 5 platform
+//                it.useJUnitPlatform()
+//                // Enable detailed test logging
+//            }
+//        }
+//    }
 
     defaultConfig {
         applicationId = "com.example.not_today_sun"
@@ -31,11 +43,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-//            buildConfigField("String", "WEATHER_API_KEY", "\"a8e1403c5d6bea0cc878a89714ec75ed\"")
         }
-//        debug {
-//            buildConfigField("String", "WEATHER_API_KEY", "\"a8e1403c5d6bea0cc878a89714ec75ed\"")
-//        }
+//
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -59,6 +68,7 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.activity)
+    implementation(libs.androidx.junit.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -90,6 +100,35 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
     implementation ("com.squareup.okhttp3:okhttp:4.12.0")
     implementation ("org.osmdroid:osmdroid-android:6.1.18")
+
+    // Dependencies for local unit tests
+
+    testImplementation ("androidx.test.ext:junit:1.1.3")
+    testImplementation ("androidx.test.espresso:espresso-core:3.4.0")
+
+
+    testImplementation ("org.hamcrest:hamcrest-library:2.2")
+//
+//    // JUnit 5 for org.junit.jupiter.api.Assertions
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+//
+    // Kotlin Reflection for kotlin.reflect.full.* and kotlin.reflect.jvm.*
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.22")
+
+    // AndroidX Test Runner and Rules
+    testImplementation("androidx.test:runner:1.6.2")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
+    // JUnit for testing
+//    testImplementation("junit:junit:4.13.2")
+    // Mockk for mocking
+    testImplementation("io.mockk:mockk-android:1.13.12")
+    // Coroutines test support
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    // AndroidX core testing for LiveData/ViewModel
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    // Hamcrest for assertions
+    testImplementation("org.hamcrest:hamcrest:2.2")
 
 
 }

@@ -24,7 +24,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> get() = _errorMessage
-
+// Increment version due to schema change
     fun fetchWeatherData(
         latitude: Double,
         longitude: Double,

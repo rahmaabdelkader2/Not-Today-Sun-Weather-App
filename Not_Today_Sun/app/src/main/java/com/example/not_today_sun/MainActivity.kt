@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         weatherRepository= WeatherRepository.getInstance(
             remoteDataSource = RemoteDataSource(),
             localDataSource = LocalDataSource(WeatherDatabase.getDatabase(this).weatherDao())

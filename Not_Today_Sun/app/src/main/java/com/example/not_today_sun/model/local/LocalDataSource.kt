@@ -1,6 +1,5 @@
 package com.example.not_today_sun.model.local
 
-import androidx.room.util.getColumnIndexOrThrow
 import com.example.not_today_sun.model.pojo.Alarm
 import com.example.not_today_sun.model.pojo.FavoriteLocation
 import com.example.not_today_sun.model.remote.CurrentWeatherResponse
