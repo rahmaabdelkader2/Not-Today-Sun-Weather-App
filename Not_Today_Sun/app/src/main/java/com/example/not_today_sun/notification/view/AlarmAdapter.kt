@@ -1,8 +1,6 @@
 package com.example.not_today_sun.notification.view
-
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -12,9 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class AlarmAdapter(
-    private val onDeleteClick: (Alarm) -> Unit,
-    private val onAlarmSwitchChange: (Alarm, Boolean) -> Unit,
-    private val onNotificationSwitchChange: (Alarm, Boolean) -> Unit
+    private val onDeleteClick: (Alarm) -> Unit
 ) : ListAdapter<Alarm, AlarmAdapter.AlarmViewHolder>(DiffCallback) {
 
     companion object DiffCallback : DiffUtil.ItemCallback<Alarm>() {
@@ -50,21 +46,9 @@ class AlarmAdapter(
                     false -> "Notifications Enabled"
                 }
                 buttonDelete.setOnClickListener {
-                    AlertDialog.Builder(binding.root.context)
-                        .setTitle("Delete Location")
-                        .setMessage("Are you sure you want to delete item ?")
-                        .setPositiveButton("Yes") { _, _ ->
-                            onDeleteClick(alarm)
-                        }
-                        .setNegativeButton("No") { dialog, _ ->
-                            dialog.dismiss()
-                        }
-                        .setCancelable(true)
-                        .show()                }
-
-
-
-            }
+                    onDeleteClick(alarm)
+                }
             }
         }
     }
+}

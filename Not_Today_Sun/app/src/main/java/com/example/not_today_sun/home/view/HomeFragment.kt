@@ -333,33 +333,29 @@ class HomeFragment : Fragment() {
                 Log.d("HomeFragment", "Displaying hourly forecast count: ${todayForecasts.size}")
 
                 hourlyForecastAdapter = HourlyForecastAdapter(
-                    todayForecasts,
                     forecast.city.timezone.toLong(),
                     viewModel::formatHourlyTime,
                     requireContext()
                 )
                 binding.rvHourlyForecast.adapter = hourlyForecastAdapter
+                hourlyForecastAdapter.submitList(todayForecasts)
                 binding.rvHourlyForecast.visibility = View.VISIBLE
 
                 val dailyForecasts = forecast.list?.groupBy { weatherData ->
                     calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
                     calendar.get(Calendar.DAY_OF_YEAR)
-                }?.mapValues { entry ->
-                    val temps = entry.value.map { it.main.temp }
-                    DailyForecast(
-                        date = entry.value.first().dt,
-                        minTemp = temps.minOrNull() ?: 0f,
-                        maxTemp = temps.maxOrNull() ?: 0f,
-                        windSpeed = entry.value.maxOfOrNull { it.wind.speed } ?: 0f
-                    )
-                }?.values?.toList()?.drop(1) ?: emptyList()
+                }?.map { entry ->
+                    entry.value.first() // Select the first WeatherData for each day
+                }?.drop(1) ?: emptyList()
+
+                Log.d("HomeFragment", "Displaying daily forecast count: ${dailyForecasts.size}")
 
                 dailyForecastAdapter = DailyForecastAdapter(
-                    dailyForecasts,
                     forecast.city.timezone.toLong(),
                     requireContext()
                 )
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
+                dailyForecastAdapter.submitList(dailyForecasts)
 
                 viewModel.saveHourlyForecastToLocal(forecast)
             }
@@ -371,7 +367,6 @@ class HomeFragment : Fragment() {
             }
         })
     }
-
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
         val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
@@ -386,8 +381,9 @@ class HomeFragment : Fragment() {
 
         val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
         dateFormat.timeZone = TimeZone.getTimeZone("GMT")
-        val adjustedTime = weather.dateTime * 1000 + weather.timezone * 1000
-        val formattedDate = dateFormat.format(Date(adjustedTime))
+        val timeZone = TimeZone.getDefault() // Or create from offset if needed
+        dateFormat.timeZone = timeZone
+        val formattedDate = dateFormat.format(Date(weather.dateTime * 1000))
         val formattedTime = viewModel.formatHourlyTime(weather.dateTime, weather.timezone.toLong())
         binding.tvDateTime.text = "$formattedDate at $formattedTime"
 

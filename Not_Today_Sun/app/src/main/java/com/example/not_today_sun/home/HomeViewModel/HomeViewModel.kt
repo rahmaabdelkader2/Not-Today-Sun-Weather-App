@@ -24,7 +24,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> get() = _errorMessage
-// Increment version due to schema change
+    // Increment version due to schema change
     fun fetchWeatherData(
         latitude: Double,
         longitude: Double,
@@ -114,13 +114,13 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
     fun formatHourlyTime(timestamp: Long, timezoneOffset: Long): String {
         return try {
             val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-            // Set the timezone to the location's timezone
-            timeFormat.timeZone = TimeZone.getTimeZone("GMT")
-            val adjustedTime = timestamp * 1000 + timezoneOffset * 1000
-            timeFormat.format(Date(adjustedTime))
+            val timeZone = TimeZone.getDefault() // Use device timezone or create one from offset
+
+            timeFormat.timeZone = timeZone
+            timeFormat.format(Date(timestamp * 1000))
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Error formatting time", e)
             "--"
         }
     }
-    }
+}

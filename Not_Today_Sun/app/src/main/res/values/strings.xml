@@ -30,7 +30,7 @@
     <string name="From">From</string>
     <string name="To">To</string>
     <string name="Location">Location</string>
-    <string name="Tempreture">Tempreture</string>
+    <string name="Temperature">Temperature</string>
     <string name="Language">Language</string>
     <string name="WindSpeed">Wind Speed</string>
     <string name="Disable">Disable</string>
@@ -42,5 +42,8 @@
     <string name="Kelvin">Kelvin</string>
     <string name="meter">m/s</string>
     <string name="mph">mph</string>
+    <string name="NotTodaySun">Not Today, Sun!</string>
+    <string name="Note">Note</string>
+    <string name="note">Use Celsius and Kelvin with meters per second for metric consistency, and Fahrenheit with miles per hour for imperial consistency.</string>
 
 </resources>

@@ -38,7 +38,6 @@ class MainActivity : AppCompatActivity() {
 
 
 
-
     private val requestExactAlarmPermission = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {

@@ -6,137 +6,66 @@ import android.content.Context
 import android.content.Intent
 import com.example.not_today_sun.model.pojo.Alarm
 import com.example.not_today_sun.notification.view.AlarmReceiver
-import com.example.not_today_sun.notification.view.DismissAlarmReceiver
-import com.example.not_today_sun.notification.view.NotificationReceiver
-import android.util.Log
 
 class AlarmHelper(private val context: Context) {
-    companion object {
-        private const val TAG = "AlarmDebug"
-    }
-
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     fun setAlarm(alarm: Alarm) {
-
-        if (!alarm.alarmEnabled) {
-            return
-        }
-
         val intent = Intent(context, AlarmReceiver::class.java).apply {
-            Log.d("++++++++++++++++++============+++++++++++",alarm.id.toString())
+            action = AlarmReceiver.ACTION_TRIGGER_ALERT
             putExtra("ALARM_ID", alarm.id)
-            putExtra("FROM_TIME", alarm.fromTimeMillis)
             putExtra("TO_TIME", alarm.toTimeMillis)
+            putExtra("ALARM_ENABLED", alarm.alarmEnabled)
+            putExtra("NOTIFICATION_ENABLED", alarm.notificationEnabled)
         }
-
         val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarm.id.toInt(),
-            intent,
+            context, alarm.id.toInt(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                alarm.fromTimeMillis,
-                pendingIntent
-            )
-            Log.d(TAG, "Alarm set for ID: ${alarm.id} at ${alarm.fromTimeMillis}")
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Failed to set alarm: ${e.message}", e)
-        }
-    }
-
-    fun setNotification(alarm: Alarm) {
-        Log.d(TAG, "setNotification called for alarm ID: ${alarm.id}, notificationEnabled: ${alarm.notificationEnabled}")
-        if (!alarm.notificationEnabled) {
-            Log.d(TAG, "Notification not enabled, skipping")
-            return
-        }
-
-        val now = System.currentTimeMillis()
-        val triggerTime = if (alarm.fromTimeMillis < now) now else alarm.fromTimeMillis
-        Log.d(TAG, "Adjusted notification trigger time: $triggerTime")
-
-        val intent = Intent(context, NotificationReceiver::class.java).apply {
-            putExtra("ALARM_ID", alarm.id)
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarm.id.toInt() + 4000, // Unique request code
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP, alarm.fromTimeMillis, pendingIntent
         )
-
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
-            Log.d(TAG, "Notification set for ID: ${alarm.id} at $triggerTime")
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Failed to set notification: ${e.message}", e)
-        }
     }
 
     fun cancelAlarm(alarm: Alarm) {
-        Log.d(TAG, "cancelAlarm called for alarm ID: ${alarm.id}")
-
-        // Cancel main alarm
-        val intent = Intent(context, AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarm.id.toInt(),
-            intent,
+        // Cancel trigger intent
+        val triggerIntent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_TRIGGER_ALERT
+        }
+        val triggerPendingIntent = PendingIntent.getBroadcast(
+            context, alarm.id.toInt(), triggerIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.cancel(pendingIntent)
+        alarmManager.cancel(triggerPendingIntent)
 
-        // Cancel stop alarm
-        val stopIntent = Intent(context, DismissAlarmReceiver::class.java).apply {
+        // Cancel stop intent (for alarm alerts)
+        val stopIntent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_DISMISS_ALERT
             putExtra("ALARM_ID", alarm.id)
         }
         val stopPendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarm.id.toInt() + 1000,
-            stopIntent,
+            context, alarm.id.toInt() + 1000, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.cancel(stopPendingIntent)
 
-        // Cancel any notification
-        cancelNotification(alarm)
-
-        // Stop ringtone if playing
-        DismissAlarmReceiver.currentRingtone?.let {
-            if (it.isPlaying) {
-                it.stop()
-                Log.d(TAG, "Ringtone stopped for alarm ID: ${alarm.id}")
-            }
-            DismissAlarmReceiver.currentRingtone = null
+        // Cancel dismiss intent
+        val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_DISMISS_ALERT
+            putExtra("ALARM_ID", alarm.id)
         }
-
-        Log.d(TAG, "All alarm components canceled for ID: ${alarm.id}")
-    }
-
-    fun cancelNotification(alarm: Alarm) {
-        Log.d(TAG, "cancelNotification called for alarm ID: ${alarm.id}")
-        val intent = Intent(context, NotificationReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarm.id.toInt() + 4000,
-            intent,
+        val dismissPendingIntent = PendingIntent.getBroadcast(
+            context, alarm.id.toInt() + 2000, dismissIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        try {
-            alarmManager.cancel(pendingIntent)
-            Log.d(TAG, "Notification canceled for ID: ${alarm.id}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error canceling notification: ${e.message}", e)
+        alarmManager.cancel(dismissPendingIntent)
+
+        // Stop ringtone if playing
+        AlarmReceiver.currentRingtone?.let { ringtone ->
+            if (ringtone.isPlaying) {
+                ringtone.stop()
+            }
+            AlarmReceiver.currentRingtone = null
         }
     }
 }

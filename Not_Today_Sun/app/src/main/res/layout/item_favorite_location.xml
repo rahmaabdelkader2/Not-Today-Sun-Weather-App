@@ -1,54 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="16dp">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
 
-    <TextView
-        android:id="@+id/cityNameTextView"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/deleteButton"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginEnd="8dp"/>
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/coordinatesTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/deleteButton"
-        app:layout_constraintTop_toBottomOf="@id/cityNameTextView"
-        android:layout_marginTop="4dp"/>
+        <TextView
+            android:id="@+id/cityNameTextView"
+            android:layout_width="235dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="8dp"
+            android:fontFamily="@font/luckiest_guy"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tempTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/deleteButton"
-        app:layout_constraintTop_toBottomOf="@id/coordinatesTextView"/>
+        <TextView
+            android:id="@+id/coordinatesTextView"
+            android:layout_width="235dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="5dp"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cityNameTextView" />
 
+        <TextView
+            android:id="@+id/tempTextView"
+            android:layout_width="235dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="5dp"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/coordinatesTextView" />
 
-    <Button
-        android:id="@+id/deleteButton"
-        android:layout_width="76dp"
-        android:layout_height="41dp"
-        android:layout_gravity="end"
-        android:layout_marginTop="64dp"
-        android:layout_marginEnd="10dp"
-        android:text="@string/Delete"
-        android:textSize="10sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <Button
+            android:id="@+id/deleteButton"
+            android:layout_width="76dp"
+            android:layout_height="41dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="64dp"
+            android:layout_marginEnd="10dp"
+            android:text="@string/Delete"
+            android:textSize="10sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

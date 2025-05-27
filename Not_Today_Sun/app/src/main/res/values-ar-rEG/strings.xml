@@ -32,7 +32,7 @@
     <string name="From">من</string>
     <string name="To">الي</string>
     <string name="Location">الموقع</string>
-    <string name="Tempreture">الحراره</string>
+    <string name="Temperature">الحراره</string>
     <string name="Language">اللغه</string>
     <string name="WindSpeed">سرعه الرياح</string>
     <string name="Disable">ايقاف</string>
@@ -44,4 +44,7 @@
     <string name="Kelvin">كلفن</string>
     <string name="meter">متر / ثانيه</string>
     <string name="mph">ميل / الساعه</string>
+    <string name="NotTodaySun">Not Today, Sun!</string>
+    <string name="Note">ملحوظه</string>
+    <string name="note">استخدم الدرجة المئوية (سلسيوس) والكلفن مع متر لكل ثانية، واستخدم الدرجة الفهرنهايت مع ميل لكل ساعه.</string>
 </resources>

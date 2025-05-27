@@ -12,14 +12,13 @@ import com.bumptech.glide.Glide
 import com.example.not_today_sun.MainActivity
 import com.example.not_today_sun.R
 import com.example.not_today_sun.databinding.FragmentHomeBinding
-import com.example.not_today_sun.home.HomeViewModel.HomeViewModel
-import com.example.not_today_sun.home.view.DailyForecast
 import com.example.not_today_sun.home.view.DailyForecastAdapter
 import com.example.not_today_sun.home.view.HomeViewModelFactory
 import com.example.not_today_sun.home.view.HourlyForecastAdapter
 import com.example.not_today_sun.key._apiKey
 import com.example.not_today_sun.model.remote.CurrentWeatherResponse
 import com.example.not_today_sun.model.repo.WeatherRepository
+import com.example.not_today_sun.home.HomeViewModel.HomeViewModel
 import com.google.android.material.snackbar.Snackbar
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,7 +34,6 @@ class LocationWeatherFragment : Fragment() {
         requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
     }
 
-    // Factory companion object
     companion object {
         private const val ARG_LATITUDE = "latitude"
         private const val ARG_LONGITUDE = "longitude"
@@ -71,19 +69,15 @@ class LocationWeatherFragment : Fragment() {
             HomeViewModelFactory(repository)
         ).get(HomeViewModel::class.java)
 
-        // Retrieve arguments safely
         val latitude = arguments?.getDouble(ARG_LATITUDE) ?: 0.0
         val longitude = arguments?.getDouble(ARG_LONGITUDE) ?: 0.0
         val cityName = arguments?.getString(ARG_CITY_NAME)
 
         setupRecyclerViews()
 
-        // Load weather data with preferences
         val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
         val language = sharedPref.getString("language", "en") ?: "en"
         viewModel.fetchWeatherData(latitude, longitude, _apiKey, units = temperatureUnit, language = language)
-
-
 
         setupObservers()
     }
@@ -118,45 +112,36 @@ class LocationWeatherFragment : Fragment() {
                 val today = calendar.get(Calendar.DAY_OF_YEAR)
                 val timezoneOffsetMillis = forecast.city.timezone * 1000L
 
-                // Hourly forecasts
-                val todayForecasts = forecast.list.let { list ->
+                val todayForecasts = forecast.list?.let { list ->
                     val filtered = list.filter { weatherData ->
                         calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
                         calendar.get(Calendar.DAY_OF_YEAR) == today
                     }
                     if (filtered.isNotEmpty()) filtered.take(24) else list.take(24)
-                }
+                } ?: emptyList()
 
                 hourlyForecastAdapter = HourlyForecastAdapter(
-                    todayForecasts,
                     forecast.city.timezone.toLong(),
                     viewModel::formatHourlyTime,
                     requireContext()
                 )
                 binding.rvHourlyForecast.adapter = hourlyForecastAdapter
+                hourlyForecastAdapter.submitList(todayForecasts)
                 binding.rvHourlyForecast.visibility = View.VISIBLE
 
-                // Daily forecasts derived from hourly data
-                val dailyForecasts = forecast.list.groupBy { weatherData ->
+                val dailyForecasts = forecast.list?.groupBy { weatherData ->
                     calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
                     calendar.get(Calendar.DAY_OF_YEAR)
-                }.mapValues { entry ->
-                    val temps = entry.value.map { it.main.temp }
-                    val windSpeeds = entry.value.map { it.wind.speed }
-                    DailyForecast(
-                        date = entry.value.first().dt,
-                        minTemp = temps.minOrNull() ?: 0f,
-                        maxTemp = temps.maxOrNull() ?: 0f,
-                        windSpeed = windSpeeds.maxOrNull() ?: 0f // Compute max wind speed for the day
-                    )
-                }.values.toList().drop(1)
+                }?.map { entry ->
+                    entry.value.first()
+                }?.drop(1) ?: emptyList()
 
                 dailyForecastAdapter = DailyForecastAdapter(
-                    dailyForecasts,
                     forecast.city.timezone.toLong(),
                     requireContext()
                 )
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
+                dailyForecastAdapter.submitList(dailyForecasts)
 
                 viewModel.saveHourlyForecastToLocal(forecast)
             }
@@ -172,7 +157,6 @@ class LocationWeatherFragment : Fragment() {
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
 
-        // Apply temperature unit from SharedPreferences
         val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
         val unitSymbol = when (temperatureUnit) {
             "metric" -> "°C"
@@ -181,16 +165,16 @@ class LocationWeatherFragment : Fragment() {
             else -> "°C"
         }
         binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
-        // Format date and time with location's timezone
-        val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy 'at' h:mm a", Locale.getDefault())
-        dateFormat.timeZone = TimeZone.getTimeZone("GMT")
-        val adjustedTime = weather.dateTime * 1000 + weather.timezone * 1000
-        binding.tvDateTime.text = dateFormat.format(Date(adjustedTime))
 
-        // Apply wind speed unit from SharedPreferences
+        // Use SimpleDateFormat and viewModel.formatHourlyTime for date and time
+        val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getDefault() // Use device timezone
+        val formattedDate = dateFormat.format(Date(weather.dateTime * 1000))
+        val formattedTime = viewModel.formatHourlyTime(weather.dateTime, weather.timezone.toLong())
+        binding.tvDateTime.text = "$formattedDate at $formattedTime"
         val windSpeedUnit = sharedPref.getString("wind_speed_unit", "m/s") ?: "m/s"
         val windSpeed = if (windSpeedUnit == "mph") {
-            weather.wind.speed * 2.23694 // Convert m/s to mph
+            weather.wind.speed * 2.23694
         } else {
             weather.wind.speed
         }

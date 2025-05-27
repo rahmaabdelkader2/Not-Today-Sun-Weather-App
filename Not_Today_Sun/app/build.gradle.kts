@@ -15,16 +15,7 @@ android {
         buildConfig=true
     }
 
-//    testOptions {
-//        unitTests {
-//            all {
-//                it.enabled = true
-//                // Enable JUnit 5 platform
-//                it.useJUnitPlatform()
-//                // Enable detailed test logging
-//            }
-//        }
-//    }
+
 
     defaultConfig {
         applicationId = "com.example.not_today_sun"
