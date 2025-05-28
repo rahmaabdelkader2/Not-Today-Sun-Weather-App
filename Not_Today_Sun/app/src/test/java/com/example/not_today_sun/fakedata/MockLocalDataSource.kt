@@ -63,7 +63,7 @@ class MockLocalDataSource {
     fun addFavoriteLocationFromCityName(cityName: String) {
         val location = FavoriteLocation(
             cityName = cityName,
-            latitude = 44.34, // Default values for testing
+            latitude = 44.34,
             longitude = 10.99,
             maxTemp = 297.87,
             minTemp = 296.76

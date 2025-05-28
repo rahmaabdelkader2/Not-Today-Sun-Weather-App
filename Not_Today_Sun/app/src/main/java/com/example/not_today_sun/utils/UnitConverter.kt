@@ -33,7 +33,6 @@ object UnitConverter {
         }
     }
 
-    // Get unit symbol for wind speed
     fun getWindSpeedUnitSymbol(unit: String): String {
         return when (unit) {
             "m/s" -> "m/s"

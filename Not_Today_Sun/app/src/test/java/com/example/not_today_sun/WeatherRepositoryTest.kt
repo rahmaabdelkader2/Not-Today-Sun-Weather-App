@@ -147,6 +147,7 @@ class WeatherRepositoryTest {
 
     @Before
     fun setup() {
+        // Arrange: Set up mock data sources and repository
         val mockRemote = MockRemoteDataSource(
             hourlyForecasts = mapOf(Pair(44.34, 10.99) to mockHourlyForecastResponse),
             currentWeathers = mapOf(Pair(44.34, 10.99) to mockCurrentWeatherResponse)
@@ -161,11 +162,16 @@ class WeatherRepositoryTest {
 
     @Test
     fun getCurrentWeather_validCoordinates_returnsSuccess() = runTest {
+        // Arrange:(handled in @Before)
+
+        // Act: Fetch current weather for valid coordinates
         val result = repository.getCurrentWeather(
             latitude = 44.34,
             longitude = 10.99,
             apiKey = "valid_api_key"
         )
+
+        // Assert: Verify the result is successful and contains expected data
         assertThat(result.isSuccess, `is`(true))
         result.onSuccess { response ->
             assertThat(response.cityName, `is`("Zocca"))
@@ -174,12 +180,32 @@ class WeatherRepositoryTest {
     }
 
     @Test
+    fun getCurrentWeather_invalidCoordinates_returnsFailure() = runTest {
+        // Arrange:(mock returns failure for unmapped coordinates)
+
+        // Act: Fetch current weather for invalid coordinates
+        val result = repository.getCurrentWeather(
+            latitude = 999.0,
+            longitude = 999.0,
+            apiKey = "valid_api_key"
+        )
+
+        // Assert: Verify the result is a failure
+        assertThat(result.isFailure, `is`(true))
+    }
+
+    @Test
     fun getHourlyForecast_validCoordinates_returnsSuccess() = runTest {
+        // Arrange:(handled in @Before)
+
+        // Act: Fetch hourly forecast for valid coordinates
         val result = repository.getHourlyForecast(
             latitude = 44.34,
             longitude = 10.99,
             apiKey = "valid_api_key"
         )
+
+        // Assert: Verify the result is successful and contains expected data
         assertThat(result.isSuccess, `is`(true))
         result.onSuccess { response ->
             assertThat(response.city.name, `is`("Zocca"))
@@ -189,46 +215,74 @@ class WeatherRepositoryTest {
 
     @Test
     fun saveHourlyForecastToLocal_savesCorrectly() = runTest {
-        repository.saveHourlyForecastToLocal(mockHourlyForecastResponse)
+        // Arrange: Prepare mock hourly forecast response
+        val forecast = mockHourlyForecastResponse
+
+        // Act: Save the hourly forecast to local storage
+        repository.saveHourlyForecastToLocal(forecast)
+
+        // Assert: Verify  saved forecast can be retrieved with correct data
         val retrieved = localDataSource.getHourlyForecast()
         assertThat(retrieved?.city?.name, `is`("Zocca"))
     }
 
     @Test
     fun saveCurrentWeatherToLocal_savesCorrectly() = runTest {
-        repository.saveCurrentWeatherToLocal(mockCurrentWeatherResponse)
+        // Arrange: Prepare mock current weather response
+        val weather = mockCurrentWeatherResponse
+
+        // Act: Save the current weather to local storage
+        repository.saveCurrentWeatherToLocal(weather)
+
+        // Assert: Verify the saved weather can be retrieved with correct data
         val retrieved = localDataSource.getCurrentWeather()
         assertThat(retrieved?.cityName, `is`("Zocca"))
     }
 
     @Test
     fun favoriteLocationOperations_workCorrectly() = runTest {
-        // Test insert
-        repository.saveFavoriteLocation(testFavoriteLocation)
+        // Arrange: Prepare favorite location
+        val location = testFavoriteLocation
+
+        // Act: Insert the favorite location
+        repository.saveFavoriteLocation(location)
+
+        // Assert: Verify the location was saved correctly
         val locations = repository.getAllFavoriteLocations()
         assertThat(locations.size, `is`(1))
         assertThat(locations[0].cityName, `is`("Zocca"))
 
-        // Test delete - pass the city name instead of the object
-        repository.deleteFavoriteLocation(testFavoriteLocation)
+        // Act: Delete the favorite location
+        repository.deleteFavoriteLocation(location)
+
+        // Assert: Verify the location was deleted
         val updatedLocations = repository.getAllFavoriteLocations()
         assertThat(updatedLocations.size, `is`(0))
     }
 
     @Test
     fun alarmOperations_workCorrectly() = runTest {
-        // Test save
-        val alarmId = repository.saveAlarm(testAlarm)
+        // Arrange: Prepare test alarm
+        val alarm = testAlarm
+
+        // Act: Save the alarm
+        val alarmId = repository.saveAlarm(alarm)
+
+        // Assert: Verify the alarm was saved correctly
         val alarms = repository.getAllAlarms()
         assertThat(alarms.size, `is`(1))
         assertThat(alarms[0].dateMillis, `is`(1661871600L))
 
-        // Test get by id
+        // Act: Retrieve the alarm by ID
         val retrievedAlarm = repository.getAlarmById(alarmId)
+
+        // Assert: Verify the retrieved alarm has correct data
         assertThat(retrievedAlarm?.dateMillis, `is`(1661871600L))
 
-        // Test delete
+        // Act: Delete the alarm
         repository.deleteAlarm(alarmId)
+
+        // Assert: Verify the alarm was deleted
         val updatedAlarms = repository.getAllAlarms()
         assertThat(updatedAlarms.size, `is`(0))
     }

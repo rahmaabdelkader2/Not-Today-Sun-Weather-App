@@ -119,7 +119,7 @@ class FavViewModelTest {
         assertThat(result.size, `is`(1))
         assertThat(result[0].cityName, `is`("Zocca"))
         assertThat(viewModel.isLoading.getOrAwaitValue(), `is`(false))
-        assertThat(viewModel.errorMessage.getOrAwaitValue(), nullValue()) // Use nullValue() instead of is(null)
+        assertThat(viewModel.errorMessage.getOrAwaitValue(), nullValue())
     }
 
     @Test
@@ -180,7 +180,7 @@ class FavViewModelTest {
     fun deleteLocation_emitsError_when_repository_throws_exception() = runTest {
         // Arrange
         val testException = RuntimeException("Delete error")
-        // Explicitly mock the deleteFavoriteLocation call to throw an exception
+        //h  mock the deleteFavoriteLocation  fydrb throw an exception
         coEvery { repository.deleteFavoriteLocation(testFavoriteLocation) } throws testException
 
         // Act
