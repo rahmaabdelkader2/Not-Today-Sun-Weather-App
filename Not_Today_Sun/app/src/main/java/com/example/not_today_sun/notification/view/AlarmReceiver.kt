@@ -142,7 +142,7 @@ class AlarmReceiver : BroadcastReceiver() {
                         "N/A"
                     }
 
-                    // Determine advice based on weather description (case-insensitive)
+                    // Determine advice based on weather description
                     val normalizedDescription = weatherDescription.lowercase()
                     val advice = WEATHER_ADVICE[normalizedDescription] ?: "No specific advice available."
                     val notificationText = "Current weather: $weatherDescription. $advice"

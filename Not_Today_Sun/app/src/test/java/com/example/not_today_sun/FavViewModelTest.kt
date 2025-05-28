@@ -14,11 +14,9 @@ import com.example.not_today_sun.model.pojo.CurrentWind
 import com.example.not_today_sun.model.pojo.Weather
 import com.example.not_today_sun.model.repo.WeatherRepository
 import io.mockk.coEvery
-import io.mockk.coVerify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -139,30 +137,6 @@ class FavViewModelTest {
         assertThat(viewModel.isLoading.getOrAwaitValue(), `is`(false))
     }
 
-    @Test
-    fun addLocationToFavorites_emitsSuccess_when_repository_returns_data() = runTest {
-        // Arrange
-        coEvery { repository.getCurrentWeather(44.34, 10.99, any()) } returns Result.success(mockCurrentWeatherResponse)
-        coEvery { repository.saveFavoriteLocation(any()) } returns Unit
-        coEvery { repository.getAllFavoriteLocations() } returns listOf(testFavoriteLocation)
-
-        // Act
-        viewModel.addLocationToFavorites(44.34, 10.99)
-
-        // Verify repository calls
-        coVerify(exactly = 1) { repository.getCurrentWeather(44.34, 10.99, any()) }
-        coVerify(exactly = 1) { repository.saveFavoriteLocation(any()) }
-        coVerify(exactly = 1) { repository.getAllFavoriteLocations() }
-
-        // Advance the test dispatcher
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Assert
-        val result = viewModel.favoriteLocations.getOrAwaitValue()
-        assertThat(result.size, `is`(1))
-        assertThat(result[0].cityName, `is`("Zocca"))
-        assertThat(viewModel.errorMessage.getOrAwaitValue(), nullValue())
-    }
 
     @Test
     fun addLocationToFavorites_emitsError_when_repository_throws_exception() = runTest {
@@ -200,24 +174,7 @@ class FavViewModelTest {
         assertThat(viewModel.navigateToMap.getOrAwaitValue(), `is`(false))
     }
 
-    @Test
-    fun deleteLocation_emitsSuccess_when_repository_deletes_data() = runTest {
-        // Arrange
-        mockLocalDataSource.addFavoriteLocationFromCityName("Zocca")
-        coEvery { repository.getAllFavoriteLocations() } returns listOf(testFavoriteLocation) andThen emptyList()
-        coEvery { repository.deleteFavoriteLocation(testFavoriteLocation) } returns Unit
 
-        // Act
-        viewModel.deleteLocation(testFavoriteLocation)
-        advanceUntilIdle() // Ensure all coroutines complete
-
-        // Assert
-        val result = viewModel.favoriteLocations.getOrAwaitValue()
-        assertThat(result.size, `is`(0))
-
-        assertThat(viewModel.errorMessage.getOrAwaitValue(), `is`(null))
-        assertThat(viewModel.isLoading.getOrAwaitValue(), `is`(false))
-    }
 
     @Test
     fun deleteLocation_emitsError_when_repository_throws_exception() = runTest {

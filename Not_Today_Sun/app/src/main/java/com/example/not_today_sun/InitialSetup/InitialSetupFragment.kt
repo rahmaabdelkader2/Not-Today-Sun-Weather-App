@@ -214,7 +214,6 @@ class InitialSetupFragment : Fragment() {
                     proceedAfterPermissions()
                 } else {
                     Toast.makeText(requireContext(), "Notification permission is required for alerts.", Toast.LENGTH_SHORT).show()
-                    // Proceed anyway or force user to allow - your choice here:
                     proceedAfterPermissions()
                 }
             }

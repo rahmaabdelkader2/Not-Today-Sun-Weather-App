@@ -137,10 +137,10 @@ class WeatherRepositoryTest {
     )
 
     private val testAlarm = Alarm(
-        id = 0, // Auto-generated, set to 0
-        dateMillis = 1661871600, // Use the same timestamp as before
-        fromTimeMillis = 1661871600, // Example: start time
-        toTimeMillis = 1661875200, // Example: end time (1 hour later)
+        id = 0,
+        dateMillis = 1661871600,
+        fromTimeMillis = 1661871600,
+        toTimeMillis = 1661875200,
         alarmEnabled = true,
         notificationEnabled = true
     )

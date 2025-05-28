@@ -15,7 +15,6 @@ class MyApplication : Application() {
 
     lateinit var weatherRepository: WeatherRepository
         private set
-
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "MyApplication.onCreate called")

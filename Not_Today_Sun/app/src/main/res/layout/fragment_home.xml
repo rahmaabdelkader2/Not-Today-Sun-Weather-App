@@ -195,8 +195,8 @@
                                     android:textSize="16sp" />
                             </LinearLayout>
                         </LinearLayout>
-                    </LinearLayout> <!-- Closing weatherContainer LinearLayout -->
-                </androidx.cardview.widget.CardView> <!-- Closing weatherCard CardView -->
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvHourlyForecast"
@@ -209,7 +209,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="8dp" />
-            </LinearLayout> <!-- Closing vertical LinearLayout inside ScrollView -->
-        </ScrollView> <!-- Closing ScrollView -->
-    </androidx.constraintlayout.widget.ConstraintLayout> <!-- Closing ConstraintLayout -->
-</androidx.coordinatorlayout.widget.CoordinatorLayout> <!-- Closing CoordinatorLayout -->
+            </LinearLayout>
+        </ScrollView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
