@@ -110,8 +110,6 @@ dependencies {
     testImplementation("androidx.test:runner:1.6.2")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
-    // JUnit for testing
-//    testImplementation("junit:junit:4.13.2")
     // Mockk for mocking
     testImplementation("io.mockk:mockk-android:1.13.12")
     // Coroutines test support

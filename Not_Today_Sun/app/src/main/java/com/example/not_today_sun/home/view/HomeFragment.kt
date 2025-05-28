@@ -23,7 +23,9 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.not_today_sun.MainActivity
+import com.example.not_today_sun.utils.NetworkUtils
 import com.example.not_today_sun.R
+import com.example.not_today_sun.utils.UnitConverter
 import com.example.not_today_sun.databinding.FragmentHomeBinding
 import com.example.not_today_sun.home.HomeViewModel.HomeViewModel
 import com.example.not_today_sun.key._apiKey
@@ -101,9 +103,14 @@ class HomeFragment : Fragment() {
     private fun setupPreferenceChangeListener() {
         preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                "use_gps", "use_map", "map_lat", "map_lon", "temperature_unit", "wind_speed_unit", "language" -> {
+                "use_gps", "use_map", "map_lat", "map_lon" -> {
                     Log.d("HomeFragment", "Preference changed: $key, refreshing weather data")
                     checkAndTriggerLocation()
+                }
+                "temperature_unit", "wind_speed_unit", "language" -> {
+                    Log.d("HomeFragment", "Preference changed: $key, refreshing UI")
+                    viewModel.currentWeather.value?.let { updateWeatherUI(it) }
+                    // Note: Hourly and daily forecast adapters may need updating if they display units
                 }
             }
         }
@@ -195,7 +202,7 @@ class HomeFragment : Fragment() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     saveLocation(location.latitude, location.longitude)
-                    fetchWeatherData(location.latitude, location.longitude)
+                    fetchWeatherData(location.latitude, location.longitude, NetworkUtils.isInternetAvailable(requireContext()))
                     fusedLocationClient.removeLocationUpdates(this)
                 }
             }
@@ -212,7 +219,7 @@ class HomeFragment : Fragment() {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     location?.let {
                         saveLocation(it.latitude, it.longitude)
-                        fetchWeatherData(it.latitude, it.longitude)
+                        fetchWeatherData(it.latitude, it.longitude, NetworkUtils.isInternetAvailable(requireContext()))
                     }
                 }.addOnFailureListener { exception ->
                     if (exception is SecurityException) {
@@ -249,7 +256,7 @@ class HomeFragment : Fragment() {
 
         if (isValidLocation(latitude, longitude)) {
             Log.d("HomeFragment", "Fetching weather with map location: $latitude, $longitude")
-            fetchWeatherData(latitude, longitude)
+            fetchWeatherData(latitude, longitude, NetworkUtils.isInternetAvailable(requireContext()))
         } else {
             Log.e("HomeFragment", "Invalid map location coordinates")
             with(sharedPref.edit()) {
@@ -263,7 +270,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun fetchWeatherWithFallback() {
-        fetchWeatherData(51.5074, -0.1278)
+        fetchWeatherData(51.5074, -0.1278, NetworkUtils.isInternetAvailable(requireContext()))
         Snackbar.make(
             binding.weatherContainer,
             "Unable to get location. Using London as default.",
@@ -287,7 +294,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun fetchWeatherData(latitude: Double, longitude: Double) {
+    private fun fetchWeatherData(latitude: Double, longitude: Double, isNetworkAvailable: Boolean) {
         val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
         val language = sharedPref.getString("language", "en") ?: "en"
 
@@ -295,22 +302,27 @@ class HomeFragment : Fragment() {
             latitude = latitude,
             longitude = longitude,
             apiKey = _apiKey,
-            units = temperatureUnit,
-            language = language
+            units = "metric",
+            language = language,
+            isNetworkAvailable = isNetworkAvailable
         )
-        Log.d("HomeFragment", "Fetching weather for: $latitude, $longitude, units: $temperatureUnit, language: $language")
+        Log.d("HomeFragment", "Fetching weather for: $latitude, $longitude, units: metric, language: $language, network: $isNetworkAvailable")
     }
 
     private fun setupObservers() {
         viewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             binding.weatherContainer.visibility = if (isLoading) View.GONE else View.VISIBLE
+            binding.rvHourlyForecast.visibility = if (isLoading) View.GONE else View.VISIBLE
+            binding.rvDailyForecast.visibility = if (isLoading) View.GONE else View.VISIBLE
         })
 
         viewModel.currentWeather.observe(viewLifecycleOwner, Observer { weather ->
             weather?.let {
                 updateWeatherUI(it)
-                viewModel.saveCurrentWeatherToLocal(it)
+                if (NetworkUtils.isInternetAvailable(requireContext())) {
+                    viewModel.saveCurrentWeatherToLocal(it)
+                }
             }
         })
 
@@ -345,7 +357,7 @@ class HomeFragment : Fragment() {
                     calendar.timeInMillis = weatherData.dt * 1000L + timezoneOffsetMillis
                     calendar.get(Calendar.DAY_OF_YEAR)
                 }?.map { entry ->
-                    entry.value.first() // Select the first WeatherData for each day
+                    entry.value.first()
                 }?.drop(1) ?: emptyList()
 
                 Log.d("HomeFragment", "Displaying daily forecast count: ${dailyForecasts.size}")
@@ -357,7 +369,9 @@ class HomeFragment : Fragment() {
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
                 dailyForecastAdapter.submitList(dailyForecasts)
 
-                viewModel.saveHourlyForecastToLocal(forecast)
+                if (NetworkUtils.isInternetAvailable(requireContext())) {
+                    viewModel.saveHourlyForecastToLocal(forecast)
+                }
             }
         })
 
@@ -367,37 +381,28 @@ class HomeFragment : Fragment() {
             }
         })
     }
+
     private fun updateWeatherUI(weather: CurrentWeatherResponse) {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
+
         val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
-        val unitSymbol = when (temperatureUnit) {
-            "metric" -> "°C"
-            "imperial" -> "°F"
-            "standard" -> "K"
-            else -> "°C"
-        }
-        binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
-        binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
+        val temperature = UnitConverter.convertTemperature(weather.main.temperature, "metric", temperatureUnit)
+        val unitSymbol = UnitConverter.getTemperatureUnitSymbol(temperatureUnit)
+        binding.tvTemperature.text = String.format("%.1f%s", temperature, unitSymbol)
 
         val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
-        dateFormat.timeZone = TimeZone.getTimeZone("GMT")
-        val timeZone = TimeZone.getDefault() // Or create from offset if needed
-        dateFormat.timeZone = timeZone
+        dateFormat.timeZone = TimeZone.getDefault()
         val formattedDate = dateFormat.format(Date(weather.dateTime * 1000))
         val formattedTime = viewModel.formatHourlyTime(weather.dateTime, weather.timezone.toLong())
         binding.tvDateTime.text = "$formattedDate at $formattedTime"
 
         val windSpeedUnit = sharedPref.getString("wind_speed_unit", "m/s") ?: "m/s"
-        val windSpeed = if (windSpeedUnit == "mph") {
-            weather.wind.speed * 2.23694
-        } else {
-            weather.wind.speed
-        }
-        binding.tvWind.text = String.format("Wind: %.1f %s", windSpeed, windSpeedUnit)
+        val windSpeed = UnitConverter.convertWindSpeed(weather.wind.speed, "m/s", windSpeedUnit)
+        binding.tvWind.text = String.format("%.1f %s", windSpeed, UnitConverter.getWindSpeedUnitSymbol(windSpeedUnit))
 
-        binding.tvHumidity.text = "Humidity: ${weather.main.humidity}%"
-        binding.tvPressure.text = "Pressure: ${weather.main.pressure} hPa"
-        binding.tvClouds.text = "Clouds: ${weather.clouds.cloudiness}%"
+        binding.tvHumidity.text = "${weather.main.humidity}%"
+        binding.tvPressure.text = "${weather.main.pressure}"
+        binding.tvClouds.text = "${weather.clouds.cloudiness}%"
 
         weather.weather.firstOrNull()?.let { weatherDesc ->
             binding.tvWeatherDescription.text = weatherDesc.description?.replaceFirstChar {

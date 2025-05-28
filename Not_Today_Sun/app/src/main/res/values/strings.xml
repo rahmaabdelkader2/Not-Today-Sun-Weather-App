@@ -45,5 +45,9 @@
     <string name="NotTodaySun">Not Today, Sun!</string>
     <string name="Note">Note</string>
     <string name="note">Use Celsius and Kelvin with meters per second for metric consistency, and Fahrenheit with miles per hour for imperial consistency.</string>
+    <string name="Humidity">Humidity</string>
+    <string name="Wind">Wind</string>
+    <string name="Pressure">Pressure</string>
+    <string name="Clouds">Clouds</string>
 
 </resources>

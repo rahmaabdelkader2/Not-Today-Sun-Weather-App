@@ -34,11 +34,23 @@ class NotificationViewModel(
         }
     }
 
-    fun addAlarm(alert: Alarm) {
+    fun addAlarm(alarm: Alarm, latitude: Double, longitude: Double, apiKey: String, units: String = "metric", language: String = "en") {
         viewModelScope.launch {
-            val alarmId = repository.saveAlarm(alert)
-            val savedAlert = alert.copy(id = alarmId)
-            alarmHelper.setAlarm(savedAlert)
+            // Fetch current weather to get description
+            val weatherDescription = try {
+                val weatherResult = repository.getCurrentWeather(latitude, longitude, apiKey, units, language)
+                if (weatherResult.isSuccess) {
+                    weatherResult.getOrThrow().weather.firstOrNull()?.description?.replaceFirstChar { it.uppercaseChar() } ?: "N/A"
+                } else {
+                    "N/A"
+                }
+            } catch (e: Exception) {
+                "N/A"
+            }
+            val alarmWithDescription = alarm.copy(weatherDescription = weatherDescription)
+            val alarmId = repository.saveAlarm(alarmWithDescription)
+            val savedAlarmClassifier = alarmWithDescription.copy(id = alarmId)
+            alarmHelper.setAlarm(savedAlarmClassifier)
             getAllAlarms()
         }
     }

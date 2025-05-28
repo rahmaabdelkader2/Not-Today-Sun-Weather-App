@@ -24,13 +24,14 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> get() = _errorMessage
-    // Increment version due to schema change
+
     fun fetchWeatherData(
         latitude: Double,
         longitude: Double,
         apiKey: String,
         units: String = "metric",
-        language: String = "en"
+        language: String = "en",
+        isNetworkAvailable: Boolean = true
     ) {
         // Validate coordinates first
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -42,45 +43,60 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                // Fetch current weather
-                val currentResult = repository.getCurrentWeather(
-                    latitude = latitude,
-                    longitude = longitude,
-                    apiKey = apiKey,
-                    units = units,
-                    language = language
-                )
-                if (currentResult.isSuccess) {
-                    val weatherResponse = currentResult.getOrThrow()
-                    _currentWeather.value = weatherResponse
-                    _errorMessage.value = null
-                } else {
-                    val exception = currentResult.exceptionOrNull() ?: Exception("Unknown error")
-                    _errorMessage.value = "Failed to fetch current weather: ${exception.message}"
-                    Log.e("HomeViewModel", "Current weather fetch failed", exception)
-                }
+                if (isNetworkAvailable) {
+                    // Fetch from internet
+                    val currentResult = repository.getCurrentWeather(
+                        latitude = latitude,
+                        longitude = longitude,
+                        apiKey = apiKey,
+                        units = units,
+                        language = language
+                    )
+                    if (currentResult.isSuccess) {
+                        val weatherResponse = currentResult.getOrThrow()
+                        _currentWeather.value = weatherResponse
+                        saveCurrentWeatherToLocal(weatherResponse)
+                        _errorMessage.value = null
+                    } else {
+                        throw currentResult.exceptionOrNull() ?: Exception("Unknown error")
+                    }
 
-                // Fetch hourly forecast
-                val forecastResult = repository.getHourlyForecast(
-                    latitude = latitude,
-                    longitude = longitude,
-                    apiKey = apiKey,
-                    units = units,
-                    language = language
-                )
-                if (forecastResult.isSuccess) {
-                    val forecastResponse = forecastResult.getOrThrow()
-                    _hourlyForecast.value = forecastResponse
-                    saveHourlyForecastToLocal(forecastResponse)
-                    _errorMessage.value = null
+                    val forecastResult = repository.getHourlyForecast(
+                        latitude = latitude,
+                        longitude = longitude,
+                        apiKey = apiKey,
+                        units = units,
+                        language = language
+                    )
+                    if (forecastResult.isSuccess) {
+                        val forecastResponse = forecastResult.getOrThrow()
+                        _hourlyForecast.value = forecastResponse
+                        saveHourlyForecastToLocal(forecastResponse)
+                        _errorMessage.value = null
+                    } else {
+                        throw forecastResult.exceptionOrNull() ?: Exception("Unknown error")
+                    }
                 } else {
-                    val exception = forecastResult.exceptionOrNull() ?: Exception("Unknown error")
-                    _errorMessage.value = "Failed to fetch forecast: ${exception.message}"
-                    Log.e("HomeViewModel", "Hourly forecast fetch failed", exception)
+                    // Fallback to local data
+                    val savedWeather = repository.getSavedCurrentWeather()
+                    if (savedWeather.isSuccess) {
+                        _currentWeather.value = savedWeather.getOrThrow()
+                        _errorMessage.value = null
+                    } else {
+                        _errorMessage.value = "No internet and no cached weather data"
+                    }
+
+                    val savedForecast = repository.getSavedHourlyForecast()
+                    if (savedForecast.isSuccess) {
+                        _hourlyForecast.value = savedForecast.getOrThrow()
+                        _errorMessage.value = null
+                    } else {
+                        _errorMessage.value = _errorMessage.value ?: "No internet and no cached forecast data"
+                    }
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Network error: ${e.message}"
-                Log.e("HomeViewModel", "Network error", e)
+                _errorMessage.value = "Error: ${e.message}"
+                Log.e("HomeViewModel", "Error fetching data", e)
             } finally {
                 _isLoading.value = false
             }
@@ -114,8 +130,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
     fun formatHourlyTime(timestamp: Long, timezoneOffset: Long): String {
         return try {
             val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-            val timeZone = TimeZone.getDefault() // Use device timezone or create one from offset
-
+            val timeZone = TimeZone.getDefault()
             timeFormat.timeZone = timeZone
             timeFormat.format(Date(timestamp * 1000))
         } catch (e: Exception) {

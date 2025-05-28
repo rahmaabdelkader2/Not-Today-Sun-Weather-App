@@ -1,6 +1,7 @@
 package com.example.not_today_sun.fav.view
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +11,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.not_today_sun.MainActivity
+import com.example.not_today_sun.utils.NetworkUtils
 import com.example.not_today_sun.R
+import com.example.not_today_sun.utils.UnitConverter
 import com.example.not_today_sun.databinding.FragmentHomeBinding
 import com.example.not_today_sun.home.view.DailyForecastAdapter
 import com.example.not_today_sun.home.view.HomeViewModelFactory
@@ -30,6 +33,7 @@ class LocationWeatherFragment : Fragment() {
     private lateinit var repository: WeatherRepository
     private lateinit var hourlyForecastAdapter: HourlyForecastAdapter
     private lateinit var dailyForecastAdapter: DailyForecastAdapter
+    private lateinit var preferenceChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
     private val sharedPref by lazy {
         requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
     }
@@ -71,15 +75,32 @@ class LocationWeatherFragment : Fragment() {
 
         val latitude = arguments?.getDouble(ARG_LATITUDE) ?: 0.0
         val longitude = arguments?.getDouble(ARG_LONGITUDE) ?: 0.0
-        val cityName = arguments?.getString(ARG_CITY_NAME)
 
         setupRecyclerViews()
+        setupPreferenceChangeListener()
 
-        val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
         val language = sharedPref.getString("language", "en") ?: "en"
-        viewModel.fetchWeatherData(latitude, longitude, _apiKey, units = temperatureUnit, language = language)
+        val isNetworkAvailable = NetworkUtils.isInternetAvailable(requireContext())
+        viewModel.fetchWeatherData(
+            latitude = latitude,
+            longitude = longitude,
+            apiKey = _apiKey,
+            units = "metric", // Always fetch in metric, convert for display
+            language = language,
+            isNetworkAvailable = isNetworkAvailable
+        )
 
         setupObservers()
+    }
+
+    private fun setupPreferenceChangeListener() {
+        preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "temperature_unit" || key == "wind_speed_unit") {
+                viewModel.currentWeather.value?.let { updateWeatherUI(it) }
+                // Note: Hourly and daily forecast adapters may need updating if they display units
+            }
+        }
+        sharedPref.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
     }
 
     private fun setupRecyclerViews() {
@@ -97,12 +118,16 @@ class LocationWeatherFragment : Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             binding.weatherContainer.visibility = if (isLoading) View.GONE else View.VISIBLE
+            binding.rvHourlyForecast.visibility = if (isLoading) View.GONE else View.VISIBLE
+            binding.rvDailyForecast.visibility = if (isLoading) View.GONE else View.VISIBLE
         }
 
         viewModel.currentWeather.observe(viewLifecycleOwner) { weather ->
             weather?.let {
                 updateWeatherUI(it)
-                viewModel.saveCurrentWeatherToLocal(it)
+                if (NetworkUtils.isInternetAvailable(requireContext())) {
+                    viewModel.saveCurrentWeatherToLocal(it)
+                }
             }
         }
 
@@ -143,7 +168,9 @@ class LocationWeatherFragment : Fragment() {
                 binding.rvDailyForecast.adapter = dailyForecastAdapter
                 dailyForecastAdapter.submitList(dailyForecasts)
 
-                viewModel.saveHourlyForecastToLocal(forecast)
+                if (NetworkUtils.isInternetAvailable(requireContext())) {
+                    viewModel.saveHourlyForecastToLocal(forecast)
+                }
             }
         }
 
@@ -158,31 +185,23 @@ class LocationWeatherFragment : Fragment() {
         binding.tvCityName.text = weather.cityName ?: "Unknown"
 
         val temperatureUnit = sharedPref.getString("temperature_unit", "metric") ?: "metric"
-        val unitSymbol = when (temperatureUnit) {
-            "metric" -> "°C"
-            "imperial" -> "°F"
-            "standard" -> "K"
-            else -> "°C"
-        }
-        binding.tvTemperature.text = String.format("%.1f%s", weather.main.temperature, unitSymbol)
+        val temperature = UnitConverter.convertTemperature(weather.main.temperature, "metric", temperatureUnit)
+        val unitSymbol = UnitConverter.getTemperatureUnitSymbol(temperatureUnit)
+        binding.tvTemperature.text = String.format("%.1f%s", temperature, unitSymbol)
 
-        // Use SimpleDateFormat and viewModel.formatHourlyTime for date and time
         val dateFormat = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault())
-        dateFormat.timeZone = TimeZone.getDefault() // Use device timezone
+        dateFormat.timeZone = TimeZone.getDefault()
         val formattedDate = dateFormat.format(Date(weather.dateTime * 1000))
         val formattedTime = viewModel.formatHourlyTime(weather.dateTime, weather.timezone.toLong())
         binding.tvDateTime.text = "$formattedDate at $formattedTime"
-        val windSpeedUnit = sharedPref.getString("wind_speed_unit", "m/s") ?: "m/s"
-        val windSpeed = if (windSpeedUnit == "mph") {
-            weather.wind.speed * 2.23694
-        } else {
-            weather.wind.speed
-        }
-        binding.tvWind.text = String.format("Wind: %.1f %s", windSpeed, windSpeedUnit)
 
-        binding.tvHumidity.text = "Humidity: ${weather.main.humidity}%"
-        binding.tvPressure.text = "Pressure: ${weather.main.pressure} hPa"
-        binding.tvClouds.text = "Clouds: ${weather.clouds.cloudiness}%"
+        val windSpeedUnit = sharedPref.getString("wind_speed_unit", "m/s") ?: "m/s"
+        val windSpeed = UnitConverter.convertWindSpeed(weather.wind.speed, "m/s", windSpeedUnit)
+        binding.tvWind.text = String.format("%.1f %s", windSpeed, UnitConverter.getWindSpeedUnitSymbol(windSpeedUnit))
+
+        binding.tvHumidity.text = "${weather.main.humidity}%"
+        binding.tvPressure.text = "${weather.main.pressure}"
+        binding.tvClouds.text = "${weather.clouds.cloudiness}%"
 
         weather.weather.firstOrNull()?.let { weatherDesc ->
             binding.tvWeatherDescription.text = weatherDesc.description?.replaceFirstChar {
@@ -200,7 +219,9 @@ class LocationWeatherFragment : Fragment() {
                         .error(R.drawable.ic_unknown)
                         .into(binding.ivCurrentWeather)
                 } else {
-                    binding.ivCurrentWeather.setImageResource(R.drawable.ic_unknown)
+                    Glide.with(this)
+                        .load(R.drawable.ic_unknown)
+                        .into(binding.ivCurrentWeather)
                 }
             }
         }
@@ -208,6 +229,7 @@ class LocationWeatherFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        sharedPref.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
         _binding = null
     }
 }

@@ -27,7 +27,7 @@ import com.example.not_today_sun.model.pojo.Alarm
 import com.example.not_today_sun.notification.viewmodel.AlarmHelper
 import com.example.not_today_sun.notification.viewmodel.NotificationViewModel
 import com.example.not_today_sun.MainActivity
-
+import com.example.not_today_sun.key._apiKey
 import java.util.*
 
 class NotificationFragment : Fragment() {
@@ -55,6 +55,9 @@ class NotificationFragment : Fragment() {
     private lateinit var selectedDate: Calendar
     private lateinit var alarmAdapter: AlarmAdapter
     private lateinit var alarmDismissReceiver: BroadcastReceiver
+    private val sharedPref by lazy {
+        requireContext().getSharedPreferences("WeatherSettings", Context.MODE_PRIVATE)
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -187,6 +190,12 @@ class NotificationFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            // Get location from SharedPreferences
+            val latitude = sharedPref.getFloat("map_lat", 51.5074f).toDouble()
+            val longitude = sharedPref.getFloat("map_lon", -0.1278f).toDouble()
+            val units = sharedPref.getString("temperature_unit", "metric") ?: "metric"
+            val language = sharedPref.getString("language", "en") ?: "en"
+
             viewModel.addAlarm(
                 Alarm(
                     dateMillis = selectedDate.timeInMillis,
@@ -194,7 +203,12 @@ class NotificationFragment : Fragment() {
                     toTimeMillis = toTimeCal.timeInMillis,
                     alarmEnabled = alarmSwitch.isChecked,
                     notificationEnabled = notificationSwitch.isChecked
-                )
+                ),
+                latitude,
+                longitude,
+                _apiKey,
+                units,
+                language
             )
             dialog.dismiss()
         }

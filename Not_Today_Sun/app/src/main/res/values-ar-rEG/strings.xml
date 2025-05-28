@@ -47,4 +47,8 @@
     <string name="NotTodaySun">Not Today, Sun!</string>
     <string name="Note">ملحوظه</string>
     <string name="note">استخدم الدرجة المئوية (سلسيوس) والكلفن مع متر لكل ثانية، واستخدم الدرجة الفهرنهايت مع ميل لكل ساعه.</string>
+    <string name="Humidity">الرطوبه</string>
+    <string name="Wind">الرياح</string>
+    <string name="Pressure">الضغط</string>
+    <string name="Clouds">الغيوم</string>
 </resources>

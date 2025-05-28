@@ -4,16 +4,6 @@ import java.util.Date
 import java.util.Locale
 
 object TimeFormatter {
-    fun formatHourlyTime(timestamp: Long, timezoneOffset: Long): String {
-        return try {
-            val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-            val adjustedTime = timestamp * 1000 + timezoneOffset * 1000
-            timeFormat.format(Date(adjustedTime))
-        } catch (e: Exception) {
-            Log.e("TimeFormatter", "Error formatting time", e)
-            "--"
-        }
-    }
 
     fun formatDate(timestamp: Long, timezoneOffset: Long): String {
         return try {

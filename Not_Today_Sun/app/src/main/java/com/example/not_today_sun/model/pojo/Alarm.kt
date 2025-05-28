@@ -10,5 +10,6 @@ data class Alarm(
     val fromTimeMillis: Long,
     val toTimeMillis: Long,
     val alarmEnabled: Boolean,
-    val notificationEnabled: Boolean
+    val notificationEnabled: Boolean,
+    val weatherDescription: String? = null
 )

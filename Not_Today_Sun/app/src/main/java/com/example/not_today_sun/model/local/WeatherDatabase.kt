@@ -12,7 +12,7 @@ import com.example.not_today_sun.model.remote.HourlyForecastResponse
 
 @Database(
     entities = [HourlyForecastResponse::class, CurrentWeatherResponse::class, FavoriteLocation::class, Alarm::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

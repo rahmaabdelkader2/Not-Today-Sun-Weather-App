@@ -10,11 +10,13 @@ import java.util.Locale
 class SettingsViewModel : ViewModel() {
     companion object {
         private const val PREFS_NAME = "WeatherSettings"
+
         private const val KEY_LOCATION = "use_gps"
         private const val KEY_MAP = "use_map"
-        private const val KEY_NOTIFICATIONS = "notifications_enabled"
         private const val KEY_MAP_LAT = "map_lat"
         private const val KEY_MAP_LON = "map_lon"
+        private const val KEY_NOTIFICATIONS = "notifications_enabled"
+
         private const val KEY_MAP_LOCATION_NAME = "map_location_name"
         private const val KEY_TEMPERATURE_UNIT = "temperature_unit"
         private const val KEY_WIND_SPEED_UNIT = "wind_speed_unit"

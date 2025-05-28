@@ -7,7 +7,7 @@ import com.example.not_today_sun.model.remote.CurrentWeatherResponse
 import com.example.not_today_sun.model.remote.HourlyForecastResponse
 import com.example.not_today_sun.model.remote.RemoteDataSource
 
-class WeatherRepository (private val remoteDataSource: RemoteDataSource, private val localDataSource: LocalDataSource) {
+class WeatherRepository(private val remoteDataSource: RemoteDataSource, private val localDataSource: LocalDataSource) {
 
     companion object {
         @Volatile
@@ -69,19 +69,41 @@ class WeatherRepository (private val remoteDataSource: RemoteDataSource, private
 
     // Local operations for Hourly Forecast
     suspend fun saveHourlyForecastToLocal(response: HourlyForecastResponse) {
-        return localDataSource.saveHourlyForecast(response)
-
+        localDataSource.saveHourlyForecast(response)
     }
 
 
-
+    suspend fun getSavedHourlyForecast(): Result<HourlyForecastResponse> {
+        return try {
+            val forecast = localDataSource.getHourlyForecast()
+            if (forecast != null) {
+                Result.success(forecast)
+            } else {
+                Result.failure(Exception("No hourly forecast found in local database"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     // Local operations for Current Weather
     suspend fun saveCurrentWeatherToLocal(response: CurrentWeatherResponse) {
-        return localDataSource.saveCurrentWeather(response)
+        localDataSource.saveCurrentWeather(response)
     }
 
+    suspend fun getSavedCurrentWeather(): Result<CurrentWeatherResponse> {
+        return try {
+            val weather = localDataSource.getCurrentWeather()
+            if (weather != null) {
+                Result.success(weather)
+            } else {
+                Result.failure(Exception("No current weather found in local database"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
-
+    // Favorite locations operations
     suspend fun saveFavoriteLocation(location: FavoriteLocation) {
         localDataSource.insertFavoriteLocation(location)
     }
@@ -94,18 +116,19 @@ class WeatherRepository (private val remoteDataSource: RemoteDataSource, private
         localDataSource.deleteFavoriteLocation(location.cityName)
     }
 
+    // Alarm operations
     suspend fun saveAlarm(alarm: Alarm): Long {
         return localDataSource.saveAlarm(alarm)
     }
 
     suspend fun getAllAlarms(): List<Alarm> {
         return localDataSource.getAllAlarms()
-
     }
 
     suspend fun deleteAlarm(alarmId: Long) {
-        return localDataSource.deleteAlarm(alarmId)
+        localDataSource.deleteAlarm(alarmId)
     }
+
     suspend fun getAlarmById(id: Long): Alarm? {
         return localDataSource.getAlarmById(id)
     }
