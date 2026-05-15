@@ -26,6 +26,8 @@ A modern Android weather application built with Kotlin that provides real-time w
 - Notifications & Alarms: AlarmManager + BroadcastReceiver
 
 ## Project Structure
+
+```
 not_today_sun/
 │
 ├── home/                 # Home screen and weather display
@@ -41,6 +43,7 @@ not_today_sun/
 ├── Splashscreen/         # Splash screen
 ├── utils/                # Utility/helper classes
 └── key/                  # API key management
+```
 
 ## Screens Included
 - Home Screen
